@@ -31,6 +31,7 @@ EXE29 = ../bin/LSS_boss2pcf_fmtxyzwfile
 EXE30 = ../bin/LSS_HR4LC_SliceSelection
 EXE31 = ../bin/LSS_HR4LC_masscut_smallbox
 EXE32 = ../bin/LSS_2pcf__numline_sumweight
+EXE33 = ../bin/LSS_HR4LC_SliceSelection_ThinSlices
 OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o
 F90C = mpif90 -heap-arrays #gfortran #mpif90 -heap-arrays
 #F90C = ifort -heap-arrays
@@ -39,8 +40,8 @@ F90C = mpif90 -heap-arrays #gfortran #mpif90 -heap-arrays
 F90FLAGS = 
 
 default: $(EXE2)
-nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)
-all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)
+nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33)
+all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33)
 
 test: $(EXE0)
 bsk: $(EXE2)
@@ -73,6 +74,7 @@ boss2pcf_fmtxyzwfile: $(EXE29)
 HR4LC_SliceSelection: $(EXE30)
 HR4LC_masscut_smallbox: $(EXE31)
 2pcf__numline_sumweight: $(EXE32)
+HR4LC_SliceSelection_ThinSlices: $(EXE33)
 AMTB: AMTB
 
 $(EXE0): $(OBJS) LSS_main_test.o
@@ -141,6 +143,8 @@ $(EXE31): LSS_cosmo_funs.o LSS_main_HR4LC_masscut_smallbox.o
 	$(F90C) -o $(EXE31) LSS_tools.o LSS_cosmo_funs.o  LSS_main_HR4LC_masscut_smallbox.o
 $(EXE32): LSS_cosmo_funs.o LSS_main_2pcf__numline_sumweight.o
 	$(F90C) -o $(EXE32) LSS_tools.o LSS_cosmo_funs.o  LSS_main_2pcf__numline_sumweight.o
+$(EXE33): LSS_cosmo_funs.o LSS_main_HR4LC_SliceSelection_ThinSlices.o
+	$(F90C) -o $(EXE33) LSS_tools.o LSS_cosmo_funs.o  LSS_main_HR4LC_SliceSelection_ThinSlices.o
 amtb: amtb
 
 
@@ -184,6 +188,7 @@ LSS_main_boss2pcf_fmtxyzwfile: LSS_cosmo_funs.o
 LSS_main_HR4LC_SliceSelection: LSS_cosmo_funs.o
 LSS_main_HR4LC_masscut_smallbox: LSS_cosmo_funs.o
 LSS_main_2pcf__numline_sumweight: LSS_cosmo_funs.o
+LSS_main_HR4LC_SliceSelection_ThinSlices: LSS_cosmo_funs.o
 GYPS: GYPS
 #LSS_main.o: LSS_settings_init.o
 #LSS_main.o: LSS_tools.o
@@ -193,4 +198,4 @@ GYPS: GYPS
 	$(F90C) -c $*.f90 $(F90FLAGS)
 
 clean :
-	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)
+	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33)
