@@ -12,7 +12,6 @@ implicit none
 	logical :: printinfo, has_outputfilename
         integer  :: numtbin,numrbin, numarg, i, dec
         real(dl), allocatable ::  counts(:, :)
-dl)
 	! Initialize MPI
 	!call mpi_init(ierr)
 	!call mpi_comm_size(mpi_comm_world,nproc,ierr)

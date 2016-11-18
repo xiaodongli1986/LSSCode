@@ -12,13 +12,12 @@ implicit none
 	logical :: printinfo, has_outputfilename
         integer  :: numtbin,numrbin, numarg, i, dec
         real(dl), allocatable ::  counts(:, :)
-dl)
 	! Initialize MPI
 	!call mpi_init(ierr)
 	!call mpi_comm_size(mpi_comm_world,nproc,ierr)
 	!call mpi_comm_rank(mpi_comm_world,myid,ierr)
 
-        printstr = ' Usage: ./LSS_2pcf '//&
+        printstr = ' Usage: ./LSS_3pcf '//&
                 '-input intpufilename -output outputfilname -rmin rmin '//&
                 '-rmax rmax -numrbin numrbin -numtbin numtbin -printinfo printinfo -decomp SIGPI/SMU'
 

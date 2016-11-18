@@ -14,10 +14,10 @@ contains
                 logical, intent(in)  :: printinfo
                 !<< Local >>
                 real(16) ::  datanorm
-                real(dl) ::  omegam,w, x,y,z, x2,y2,z2, sep,dist, theta, v3(3),v4(3),vr1(3),vr2(3),vr3(3),& !v3 is distance
+                real(dl) ::  omegam,w, x,y,z, x2,y2,z2, x3,y3,z3, r1,r2,r3, sep,dist, theta, v3(3),v4(3),vr1(3),vr2(3),vr3(3),& !v3 is distance
                          deltar,odeltar, deltar2,odeltar2, dist1,dist1sq, dist2,dist2sq, sig,pi,mind
-                integer :: i1, i2, i,j,k,l, imin,imax,jmin,jmax,kmin,kmax, di1, irbin,itbin, sigbin,pibin,&
-			i2min,i2max,j2min,j2max,k2min,k2max, ir1bin,ir2bin,ir3bin
+                integer :: i1, i2, i,j,k,l, imin,imax,jmin,jmax,kmin,kmax, di1, irbin,itbin, sigbin,pibin,xyzextra,&
+			ii,jj,kk,l2,l3,i3, i2min,i2max,j2min,j2max,k2min,k2max, ir1bin,ir2bin,ir3bin
 
                 gb_usenumdensity = .false.
                 gb_dodensitynorm = .false.
@@ -71,12 +71,14 @@ contains
                        y=gb_xyz_list(2,i1)
                        z=gb_xyz_list(3,i1)
 
-                       imin = int((x-rmax-gbgridxmin)/gbdeltax +1.0_dl)
-                       imax = int((x+rmax-gbgridxmin)/gbdeltax +1.0_dl)
-                       jmin = int((y-rmax-gbgridymin)/gbdeltay +1.0_dl)
-                       jmax = int((y+rmax-gbgridymin)/gbdeltay +1.0_dl)
-                       kmin = int((z-rmax-gbgridzmin)/gbdeltaz +1.0_dl)
-                       kmax = int((z+rmax-gbgridzmin)/gbdeltaz +1.0_dl)
+                       xyzextra = 0
+                       imin = int((x-rmax-gbgridxmin)/gbdeltax +1.0_dl-xyzextra)
+                       imax = int((x+rmax-gbgridxmin)/gbdeltax +1.0_dl+xyzextra)
+                       jmin = int((y-rmax-gbgridymin)/gbdeltay +1.0_dl-xyzextra)
+                       jmax = int((y+rmax-gbgridymin)/gbdeltay +1.0_dl+xyzextra)
+                       kmin = int((z-rmax-gbgridzmin)/gbdeltaz +1.0_dl-xyzextra)
+                       kmax = int((z+rmax-gbgridzmin)/gbdeltaz +1.0_dl+xyzextra)
+                       !print *, xyzextra; stop
 
                        do i = max(1,imin), min(gb_n_cellx,imax)
                        do j = max(1,jmin), min(gb_n_celly,jmax)
@@ -97,18 +99,20 @@ contains
                                         v3 = [(x+x2)*0.5_dl, (y+y2)*0.5_dl, (z+z2)*0.5_dl]
                                         !v3 = [x,y,z]
                                         dist = dsqrt(v3(1)**2.0_dl + v3(2)**2.0_dl + v3(3)**2.0_dl)
-                                        theta = abs(v3(1)*v4(1) + v3(2)*v4(2) + v3(3)*v4(3)) / dist / sep
+                                        !theta = abs(v3(1)*v4(1) + v3(2)*v4(2) + v3(3)*v4(3)) / dist / sep
+                                        theta = abs(x*v4(1) + y*v4(2) + z*v4(3)) / sqrt(x*x+y*y+z*z) / sep
                                         if (theta > 1.0_dl) cycle
                                         !if (theta > 1.0_dl) theta = abs(mod(theta,1.0))
 
                                         irbin = ceiling((sep-rmin)*odeltar)
                                         itbin = ceiling(theta*numtbin)
                                 !        print*, i1,i2, dist, theta, irbin, itbin, gb_mass_list(i1), gb_mass_list(i2)
-		                        do i2 = max(1,imin), min(gb_n_cellx,imax)
-                		        do j2 = max(1,jmin), min(gb_n_celly,jmax)
-		                        do k2 = max(1,kmin), min(gb_n_cellz,kmax)
-					do l3 = 1, gb_cell_mat(i2,j2,k2)%numdata
-                                        	i3 = gb_cell_mat(i2,j2,k2)%idatalist(l3)
+		                        do ii = max(1,imin), min(gb_n_cellx,imax)
+                		        do jj = max(1,jmin), min(gb_n_celly,jmax)
+		                        do kk = max(1,kmin), min(gb_n_cellz,kmax)
+					do l3 = 1, gb_cell_mat(ii,jj,kk)%numdata
+                                        	i3 = gb_cell_mat(ii,jj,kk)%idatalist(l3)
+                                                !if(i3 <= i2) cycle
 	                                        if(i3.eq.i1 .or. i3.eq.i2) cycle
 
                                         	x3 = gb_xyz_list(1,i3)
