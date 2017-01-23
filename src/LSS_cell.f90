@@ -185,7 +185,7 @@ contains
 		real(dl) :: x,y,z
 		integer :: nownum
 		integer, parameter :: re_alo_num = 5
-		real(dl) :: numpixel, numhasdata, maxdatanum, avgdatanum, numhasran, maxrannum, avgrannum, extradx=0.02!1.001
+		real(dl) :: numpixel, numhasdata, maxdatanum, avgdatanum, numhasran, maxrannum, avgrannum, extradx, extrady, extradz!1.001
 		
 		if(printinfo) print *, '  (do_cell_init begin) initializing Grid of Cells.'
 		if(use_gbfixgridrange) then
@@ -196,9 +196,12 @@ contains
 		else
 			if(printinfo) &
 				write(*,'(3x,A)') '(do_cell_init) Set range of grids from xyz range of data (under current cosmology):'
+			extradx = (gbxmaxdata-gbxmindata)*0.001
+			extrady = (gbymaxdata-gbymindata)*0.001
+			extradz = (gbzmaxdata-gbzmindata)*0.001
 			gbgridxmin = gbxmindata-extradx; gbgridxmax = gbxmaxdata+extradx
-			gbgridymin = gbymindata-extradx; gbgridymax = gbymaxdata+extradx
-			gbgridzmin = gbzmindata-extradx; gbgridzmax = gbzmaxdata+extradx
+			gbgridymin = gbymindata-extrady; gbgridymax = gbymaxdata+extrady
+			gbgridzmin = gbzmindata-extradz; gbgridzmax = gbzmaxdata+extradz
 		endif
 
 		gb_cellwidth = (gbgridxmax - gbgridxmin) / rl_num_in_x

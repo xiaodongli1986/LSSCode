@@ -4,6 +4,23 @@ module LSS_2pcf
 use LSS_chisq
 implicit none
 contains
+
+subroutine xyz2sigpi(v1,v2,sig,pi)
+real(dl), dimension(3) :: v1,v2
+real(dl):: sig,pi, dist2
+ dist2=sqrt((0.5*(v1(1)+v2(1)))**2 + (0.5*(v1(2)+v2(2)))**2 + (0.5*(v1(3)+v2(3)))**2)
+ sig=0.5*((v1(1)**2 - v2(1)**2)+(v1(2)**2 - v2(2)**2)+ (v1(3)**2 - v2(3)**2))
+ sig=abs(sig/dist2)
+!! theta=1.0-1.0/(4.0*dist2*dist2)
+!! dist2=1.0+1.0/(4.0*dist2*dist2)
+ pi= v1(1)**2 + v2(1)**2 - 2.*v1(1)*v2(1) &
+    +v1(2)**2 + v2(2)**2 - 2.*v1(2)*v2(2) &
+    +v1(3)**2 + v2(3)**2 - 2.*v1(3)*v2(3)
+ pi=sqrt(abs(pi-sig*sig))
+return
+end subroutine xyz2sigpi
+
+
         subroutine Tpcf(inputfilename, rmin,rmax,numrbin, numtbin, counts, decomp, printinfo)
                 !<< Dummy >>        
                 character(len=char_len), intent(in) :: inputfilename
@@ -14,9 +31,9 @@ contains
                 logical, intent(in)  :: printinfo
                 !<< Local >>
                 real(16) ::  datanorm
-                real(dl) ::  omegam,w, x,y,z, x2,y2,z2, sep,dist, theta, v3(3),v4(3),&
-                         deltar,odeltar, deltar2,odeltar2, dist1,dist1sq, dist2,dist2sq, sig,pi,mind
-                integer :: i1, i2, i,j,k,l, imin,imax,jmin,jmax,kmin,kmax, di1, irbin,itbin, sigbin,pibin
+                real(dl) ::  omegam,w, x,y,z, x2,y2,z2, sep,dist, theta, v1(3), v2(3), v3(3),v4(3),&
+                         deltar,odeltar, deltar2,odeltar2, dist1,dist1sq, dist2,dist2sq, sig,pi,mind, rmaxfact
+                integer :: i1, i2, i,j,k,l, imin,imax,jmin,jmax,kmin,kmax, di1, irbin,itbin, sigbin,pibin, dijk
 
                 gb_usenumdensity = .false.
                 gb_dodensitynorm = .false.
@@ -60,7 +77,7 @@ contains
                 if(printinfo) then
                         !print *, '  (Tpcf) contours = ', counts
                 endif
-                di1 = 50000
+                di1 = gb_numdata / 20
                 do i1 = 1, gb_numdata
                        ! avoid redudant calculation
                        if(mod(i1,di1).eq.1) then
@@ -70,16 +87,19 @@ contains
                        y=gb_xyz_list(2,i1)
                        z=gb_xyz_list(3,i1)
 
-                       imin = int((x-rmax-gbgridxmin)/gbdeltax +1.0_dl)
-                       imax = int((x+rmax-gbgridxmin)/gbdeltax +1.0_dl)
-                       jmin = int((y-rmax-gbgridymin)/gbdeltay +1.0_dl)
-                       jmax = int((y+rmax-gbgridymin)/gbdeltay +1.0_dl)
-                       kmin = int((z-rmax-gbgridzmin)/gbdeltaz +1.0_dl)
-                       kmax = int((z+rmax-gbgridzmin)/gbdeltaz +1.0_dl)
 
-                       do i = max(1,imin), min(gb_n_cellx,imax)
-                       do j = max(1,jmin), min(gb_n_celly,jmax)
-                       do k = max(1,kmin), min(gb_n_cellz,kmax)
+                       rmaxfact = 1.42
+                       imin = floor((x-rmax*rmaxfact-gbgridxmin)/gbdeltax +1.0_dl)
+                       imax = floor((x+rmax*rmaxfact-gbgridxmin)/gbdeltax +1.0_dl)
+                       jmin = floor((y-rmax*rmaxfact-gbgridymin)/gbdeltay +1.0_dl)
+                       jmax = floor((y+rmax*rmaxfact-gbgridymin)/gbdeltay +1.0_dl)
+                       kmin = floor((z-rmax*rmaxfact-gbgridzmin)/gbdeltaz +1.0_dl)
+                       kmax = floor((z+rmax*rmaxfact-gbgridzmin)/gbdeltaz +1.0_dl)
+
+                       dijk = 1
+                       do i = max(1,imin-dijk), min(gb_n_cellx,imax+dijk)
+                       do j = max(1,jmin-dijk), min(gb_n_celly,jmax+dijk)
+                       do k = max(1,kmin-dijk), min(gb_n_cellz,kmax+dijk)
                           if (decomp .eq. 0) then
                                 do l = 1, gb_cell_mat(i,j,k)%numdata
                                         i2 = gb_cell_mat(i,j,k)%idatalist(l)
@@ -123,16 +143,22 @@ contains
                                         !sep  = dsqrt(v4(1)**2.0_dl + v4(2)**2.0_dl + v4(3)**2.0_dl)
                                         !if(sep .ge. rmax .or. sep .le. rmin) cycle
                                         !if(sep .ge. rmax .or. sep .le. rmin) cycle
-                                        if(.false.) then
+                                        if(.true.) then
 
                                          v4 = [(x-x2), (y-y2), (z-z2)]
                                          sep  = dsqrt(v4(1)**2.0_dl + v4(2)**2.0_dl + v4(3)**2.0_dl)
-                                         if(sep .ge. 1.415_dl*rmax .or. sep .le. rmin) cycle
+                                         if(sep .ge. 1.42_dl*rmax .or. sep .le. rmin) cycle
 
                                          v3 = [(x+x2)*0.5_dl, (y+y2)*0.5_dl, (z+z2)*0.5_dl]
                                          dist = dsqrt(v3(1)**2.0_dl + v3(2)**2.0_dl + v3(3)**2.0_dl)
                                          theta = abs(v3(1)*v4(1) + v3(2)*v4(2) + v3(3)*v4(3)) / dist / sep
+                                         !if (theta > 1.0_dl) cycle
                                          sig = sep*theta; pi = dsqrt(sep*sep - sig*sig)
+					 !print *, sig, pi
+					 !v1(1)=x;v1(2)=y;v1(3)=z;
+					 !v2(1)=x2;v2(2)=y2;v2(3)=z2;
+					 !call xyz2sigpi(v1,v2,sig,pi)
+					 !print *, sig, pi
 
                                         else
                                          theta = abs((x*x2 + y*y2 + z*z2) / dist1 / dist2 )
