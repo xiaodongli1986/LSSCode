@@ -50,7 +50,7 @@ implicit none
 
       integer :: fileunits(1000), binnedr_num(1000), &
               ndat, numnotinbin, i,j, rbin, fileunit
-      character(len=char_len) :: filenames(1000), tmpstr1, tmpstr2, tmpstr3, tmpstr
+      character(len=char_len) :: filenames(1000), tmpstr1, tmpstr2, tmpstr3, tmpstr4, tmpstr
 
       ! first check of #-arg
       i = iargc()
@@ -109,7 +109,10 @@ implicit none
 		fileunits(rbin) = fileunit 
 		write(tmpstr1,'(f10.2)') rcutlist(rbin)
 		write(tmpstr2,'(f10.2)') rcutlist(rbin+1)
-                filenames(rbin) =  trim(adjustl(datafile))//'.r'//trim(adjustl(tmpstr1))//'to'//trim(adjustl(tmpstr2))
+		write(tmpstr3,*) rbin
+		write(tmpstr4,*) numrbin
+                !filenames(rbin) =  trim(adjustl(datafile))//'.r'//trim(adjustl(tmpstr1))//'to'//trim(adjustl(tmpstr2))
+                filenames(rbin) =  trim(adjustl(datafile))//'.'//trim(adjustl(tmpstr3))//'of'//trim(adjustl(tmpstr4))
                 if(routputlist(rbin)) then
 	                open(unit=fileunits(rbin),file=filenames(rbin))
         	        write(*,'(A,A)') '   ', trim(adjustl(filenames(rbin)))

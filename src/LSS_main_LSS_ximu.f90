@@ -30,9 +30,11 @@ contains
 
   real(rt) function DAofz(nowpar)
     type(par) :: nowpar
+    DAofz=0.0
   end function DAofz
   real(rt) function Hofz(nowpar)
     type(par) :: nowpar
+    Hofz=0.0
   end function Hofz
 
 
