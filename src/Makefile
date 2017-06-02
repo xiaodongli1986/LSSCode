@@ -37,7 +37,7 @@ EXE35 = ../bin/LSS_3pcf
 EXE36 = ../bin/LSS_XYZToRaDecZ
 EXE37 = ../bin/LSS_converttoRhct
 EXE38 = ../bin/LSS_LSS_ximu
-OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o
+OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o #LSS_kdtree3pcf.o kdtree2.o
 F90C = ifort -heap-arrays #gfortran #mpif90 -heap-arrays
 #F90C = ifort -heap-arrays
 #F90C = gfortran
@@ -178,6 +178,7 @@ LSS_2pcf.o: LSS_chisq.o
 LSS_main_test.o:  LSS_chisq.o 
 LSS_main_calc_grad_chisqs.o:  LSS_chisq.o 
 LSS_BSK.o : LSS_chisq.o
+#LSS_kdtree3pcf.o : kdtree2.o
 LSS_main_BSK_calc.o: LSS_BSK.o 
 LSS_main_test.o: LSS_settings_init.o
 LSS_main_BSK_Scan.o: LSS_BSK.o
@@ -222,6 +223,8 @@ GYPS: GYPS
 
 %.o: %.f90
 	$(F90C) -c $*.f90 $(F90FLAGS)
+%.o: %.F90
+	$(F90C) -c $< -o $@
 
 clean :
 	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38)

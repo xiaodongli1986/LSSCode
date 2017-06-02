@@ -26,6 +26,11 @@ implicit none
 
   integer, parameter :: N1=6
   integer, parameter :: mubins(N1) = (/ 20,21,22,23,24,25 /)
+!  integer, parameter :: mubins(N1) = (/ 35,36,37,38,39,40 /)
+!  integer, parameter :: mubins(N1) = (/ 15,16,17,18,19,20 /)
+!  integer, parameter :: mubins(N1) = (/ 10,11,12,13,14,15 /)
+!  integer, parameter :: mubins(N1) = (/ 25,26,27,28,29,30 /)
+!  integer, parameter :: mubins(N1) = (/ 10,11,12,13,14,15,16,17,18,19,20 /)
 
 !  integer, parameter :: N1=6
 !  integer, parameter :: mubins(N1) = (/ 20,21,22,23,24,25 /)
@@ -68,9 +73,10 @@ implicit none
   logical, parameter :: mock_IO_test_usemock3=(.false..and.mock_IO_test)
                         
 ! Settings: effectove redshifts of the redshift bins
-  integer, parameter :: nz = 6                        
+  integer, parameter :: nz = 6
   real(rt), parameter :: zeffs(nz) = (/ 0.2154098242_rt, 0.3156545036_rt, 0.3869159269_rt, &
                                         0.4785988874_rt, 0.5408209467_rt, 0.6186561000_rt  /)
+                                        
 !  integer, parameter :: nz = 2
 !  real(rt), parameter :: zeffs(nz) = (/ 0.2154098242_rt, 0.3156545036_rt /)
 
@@ -1482,7 +1488,7 @@ contains
 	    nummuedge=mubins(i1)+1, &
 	    intxi=intxi(1:mubins(i1)))
 !         print *, ' (smu_ximu_CalcOmWChisqs) Normalize \int xi...'
-	  call normfun(intxi(1:mubins(i1)),mubins(i1),intxis(1:mubins(i)-1,i1,i2,iz,iomwstds)) 
+	  call normfun(intxi(1:mubins(i1)),mubins(i1),intxis(1:mubins(i1)-1,i1,i2,iz,iomwstds)) 
 	  if(debug_calcchisq .and. mubins(i1).eq.25 .and.i2.eq.1) then
 	  	print *, 'intxi = ', real(intxi(1:25))
 		print *
@@ -1520,7 +1526,6 @@ contains
               chisqs_nosyscor(i1,i2,iz-1) = &
           	chisq_cov_xbar(dintxi(1:n-1), covmats(i1,i2,iz-1)%A, n-1)
             endif
-            chisqs_nosyscor_all(iz-1) = chisqs_nosyscor_all(iz-1) + chisqs_nosyscor(i1,i2,iz-1)/ dble(N1*N2)/factm2
 	    ! chisq after sys cor
             dintxi(1:n-1) = dintxi(1:n-1) - dintxi_syscor(1:n-1,i1,i2,iz-1)
             if(.not.avg_counts) then
@@ -1530,7 +1535,6 @@ contains
               chisqs_syscor(i1,i2,iz-1) =  &
             	chisq_cov_xbar(dintxi(1:n-1), covmats(i1,i2,iz-1)%A, n-1)
             endif
-            chisqs_syscor_all(iz-1)   = chisqs_syscor_all(iz-1) + chisqs_syscor(i1,i2,iz-1) / dble(N1*N2)/factm2
             if(debug_calcchisq .and. mubins(i1).eq.25 .and.i2.eq.1) then
           	print *, 'dintxi_sys = ', dintxi_syscor(1:n-1,i1,i2,iz-1)
           	print *, 'dintxi (after syscor) = ', dintxi(1:n-1)
@@ -1538,6 +1542,8 @@ contains
           	print *, 'chisq / chisq_syscor = ', chisqs_nosyscor(i1,i2,iz-1), chisqs_syscor(i1,i2,iz-1)
             endif
           enddo!do iomwstds = 1, numomwstds
+          chisqs_nosyscor_all(iz-1) = chisqs_nosyscor_all(iz-1) + chisqs_nosyscor(i1,i2,iz-1)/ dble(N1*N2)/factm2
+          chisqs_syscor_all(iz-1)   = chisqs_syscor_all(iz-1) + chisqs_syscor(i1,i2,iz-1) / dble(N1*N2)/factm2
         enddo!do iz = 2, nz
 
         ! write chisq values to files...
@@ -1713,7 +1719,7 @@ contains
 	    nummuedge=mubins(i1)+1, &
 	    intxi=intxi(1:mubins(i1)))
 !         print *, ' (smu_ximu_CalcDAHChisqs) Normalize \int xi...'
-	  call normfun(intxi(1:mubins(i1)),mubins(i1),intxis(1:mubins(i)-1,i1,i2,iz,iomwstds)) 
+	  call normfun(intxi(1:mubins(i1)),mubins(i1),intxis(1:mubins(i1)-1,i1,i2,iz,iomwstds)) 
 	  if(debug_calcchisq .and. mubins(i1).eq.25 .and.i2.eq.1) then
 	  	print *, 'intxi = ', real(intxi(1:25))
 		print *
@@ -1751,7 +1757,6 @@ contains
               chisqs_nosyscor(i1,i2,iz-1) = &
           	chisq_cov_xbar(dintxi(1:n-1), covmats(i1,i2,iz-1)%A, n-1)
             endif
-            chisqs_nosyscor_all(iz-1) = chisqs_nosyscor_all(iz-1) + chisqs_nosyscor(i1,i2,iz-1)/ dble(N1*N2)/factm2
 	    ! chisq after sys cor
             dintxi(1:n-1) = dintxi(1:n-1) - dintxi_syscor(1:n-1,i1,i2,iz-1)
             if(.not.avg_counts) then
@@ -1761,7 +1766,6 @@ contains
               chisqs_syscor(i1,i2,iz-1) =  &
             	chisq_cov_xbar(dintxi(1:n-1), covmats(i1,i2,iz-1)%A, n-1)
             endif
-            chisqs_syscor_all(iz-1)   = chisqs_syscor_all(iz-1) + chisqs_syscor(i1,i2,iz-1) / dble(N1*N2)/factm2
             if(debug_calcchisq .and. mubins(i1).eq.25 .and.i2.eq.1) then
           	print *, 'dintxi_sys = ', dintxi_syscor(1:n-1,i1,i2,iz-1)
           	print *, 'dintxi (after syscor) = ', dintxi(1:n-1)
@@ -1769,6 +1773,10 @@ contains
           	print *, 'chisq / chisq_syscor = ', chisqs_nosyscor(i1,i2,iz-1), chisqs_syscor(i1,i2,iz-1)
             endif
           enddo!do iomwstds = 1, numomwstds
+!          if (iz .eq. 1 .or. iz.eq.2 .or. iz.eq.3 ) then
+            chisqs_nosyscor_all(iz-1) = chisqs_nosyscor_all(iz-1) + chisqs_nosyscor(i1,i2,iz-1)/ dble(N1*N2)/factm2          
+            chisqs_syscor_all(iz-1)   = chisqs_syscor_all(iz-1) + chisqs_syscor(i1,i2,iz-1) / dble(N1*N2)/factm2
+!          endif
         enddo!do iz = 2, nz
 
  !       ! write chisq values to files...
