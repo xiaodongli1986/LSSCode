@@ -24,7 +24,7 @@ implicit none
 !!! Important variables
 
 	! current cosmological parameter
-	real(dl):: gb_omegam, gb_w, gb_h
+	real(dl):: gb_omegam, gb_w, gb_wa=0.0, gb_h
 
 	! maximal reshift the interpolation can reach
 	real(dl) :: de_maxintplz
@@ -194,17 +194,18 @@ contains
   	real(dl) function Hz(z)
   		real(dl) :: z
   		Hz = 100.0*gb_h*&
-  		sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w)))
+                sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w+gb_wa)) *exp(-3.0*gb_wa*z/(1.0+z)))
+  		!sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w)))
   	end function Hz
   	real(dl) function inv_Hz(z)
   		real(dl) :: z
-  		inv_Hz = 100.0*gb_h*sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w)))
-  		inv_Hz = 1.0 / inv_Hz
+  		!inv_Hz = 100.0*gb_h*sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w+gb_wa)) * exp(-3.0*gb_wa*z/(1.0+z)))
+  		inv_Hz = 1.0 /Hz(z)
   	end function inv_Hz
   	real(dl) function inv_Hz1pz(z) ! 1/[H(z)*(1+z)]: function to be integrated by t_age(z)
   		real(dl) :: z
-  		inv_Hz1pz = 100.0*gb_h*sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w)))
-  		inv_Hz1pz = 1.0 / (inv_Hz1pz*(1.0+z))
+  		!inv_Hz1pz = 100.0*gb_h*sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w)))
+  		inv_Hz1pz = inv_Hz(z) / (1.0+z)
   	end function inv_Hz1pz
 
   !------------------------------------------
@@ -215,6 +216,10 @@ contains
 		real(dl) :: z
 		! Local
 		real(dl) :: ezsq
+                if(gb_wa .ne. 0.0) then
+                        print *, 'Error (dgfdz): wa should be 0!', gb_wa
+                        stop
+                endif
 		ezsq = gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w))
 		omegamz = gb_omegam*(1.0+z)**3.0 / ezsq
 	end function omegamz
@@ -227,7 +232,10 @@ contains
 		real(dl), intent(in) :: z,gf
 		! Local
 		real(dl) ::  Omegamz, dlnHdz, esq
-
+                if(gb_wa .ne. 0.0) then
+                        print *, 'Error (dgfdz): wa should be 0!', gb_wa
+                        stop
+                endif
 		esq     =  gb_omegam*(1.0d0+z)**3.0d0 + (1.0d0-gb_omegam)*(1.0d0+z)**(3.0d0*(1.0d0+gb_w))
 		dlnHdz  =  gb_omegam*(1.0d0+z)**3.0d0 + (1.0d0+gb_w)*(1.0d0-gb_omegam)*(1.0d0+z)**(3.0d0*(1.0d0+gb_w))
 		dlnHdz  =  1.5d0*dlnHdz/(1.0d0+z)/esq

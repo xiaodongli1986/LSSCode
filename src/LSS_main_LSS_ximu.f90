@@ -26,6 +26,7 @@ implicit none
 
   integer, parameter :: N1=6
   integer, parameter :: mubins(N1) = (/ 20,21,22,23,24,25 /)
+!  integer, parameter :: mubins(N1) = (/ 11 /)
 
 !  integer, parameter :: N1=6
 !  integer, parameter :: mubins(N1) = (/ 20,21,22,23,24,25 /)
@@ -306,7 +307,7 @@ implicit none
     real(rt), allocatable :: A(:,:)
     integer :: nA=-1
   end type
-  type(M2) :: covmats(N1,N2,nz-1)
+  type(M2),save :: covmats(N1,N2,nz-1)
   real(rt) :: dintxi_syscor(maxval(mubins),N1,N2,nz-1)
      
 !----------------------------
@@ -858,7 +859,7 @@ contains
     call smu__CosmoConvert(smax_mapping,0.0_rt,DAnew,DAstd,Hnew,Hstd,sbound1,mubound1)
     call smu__CosmoConvert(smax_mapping,1.0_rt,DAnew,DAstd,Hnew,Hstd,sbound2,mubound2)
     maxs1 = floor( max(sbound1,sbound2) / deltas1 + 0.5 )
-    if(maxs1>nums1) print *, ' WARNING (mapping_smudata_to_another_cosmology_DenseToSparse)!'&
+    if(maxs1>nums1) print *, ' WARNING (mapping_smudata_to_another_cosmology_DenseToSparse)!',&
       ' Outflow of s: nums1, maxs1 = ', nums1, maxs1
     call smu__CosmoConvert(smin_mapping,0.0_rt,DAnew,DAstd,Hnew,Hstd,sbound1,mubound1)
     call smu__CosmoConvert(smin_mapping,1.0_rt,DAnew,DAstd,Hnew,Hstd,sbound2,mubound2)
