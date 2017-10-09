@@ -24,9 +24,19 @@ implicit none
 !  		15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30, &
 !  		31,32,33,34,35,36,37,38,39,40 /)
 
-  integer, parameter :: N1=6
+  integer, parameter :: N1=6, gbnumsbin = 1
   integer, parameter :: mubins(N1) = (/ 20,21,22,23,24,25 /)
+<<<<<<< HEAD:src/LSS_main_LSS_ximu_save.f90
 !  integer, parameter :: mubins(N1) = (/ 11 /)
+=======
+!  integer, parameter :: mubins(N1) = (/ 10,11,12,13,14,15 /)
+!  integer, parameter :: mubins(N1) = (/ 10*gbnumsbin,11*gbnumsbin,12*gbnumsbin,13*gbnumsbin,14*gbnumsbin,15*gbnumsbin /)
+!  integer, parameter :: mubins(N1) = (/ 35,36,37,38,39,40 /)
+!  integer, parameter :: mubins(N1) = (/ 15,16,17,18,19,20 /)
+!  integer, parameter :: mubins(N1) = (/ 10,11,12,13,14,15 /)
+!  integer, parameter :: mubins(N1) = (/ 25,26,27,28,29,30 /)
+!  integer, parameter :: mubins(N1) = (/ 10,11,12,13,14,15,16,17,18,19,20 /)
+>>>>>>> 143ee96d83217bfc821280a8ac55fc7bfcaa2bb3:src/LSS_main_LSS_ximu.f90
 
 !  integer, parameter :: N1=6
 !  integer, parameter :: mubins(N1) = (/ 20,21,22,23,24,25 /)
@@ -69,8 +79,13 @@ implicit none
   logical, parameter :: mock_IO_test_usemock3=(.false..and.mock_IO_test)
                         
 ! Settings: effectove redshifts of the redshift bins
+<<<<<<< HEAD:src/LSS_main_LSS_ximu_save.f90
   integer, parameter :: nz = 6                        
   real(rt), parameter :: zeffs(nz) = (/ 0.2154098242_rt, 0.3156545036_rt, 0.3869159269_rt, &
+=======
+  integer, parameter :: nz = 6
+  real(rt), parameter :: zeffs(nz) = (/ 0.2154098242_rt,  0.3156545036_rt, 0.3869159269_rt, &
+>>>>>>> 143ee96d83217bfc821280a8ac55fc7bfcaa2bb3:src/LSS_main_LSS_ximu.f90
                                         0.4785988874_rt, 0.5408209467_rt, 0.6186561000_rt  /)
 !  integer, parameter :: nz = 2
 !  real(rt), parameter :: zeffs(nz) = (/ 0.2154098242_rt, 0.3156545036_rt /)
@@ -296,8 +311,83 @@ contains
 end module cosmology
 
 
+
+module redbin_weights_bossdr12_6bins
+use types_constants
+implicit none
+
+
+  real(rt) :: dr12v4_cmass_N_numgal(3,1000),dr12v4_cmass_S_numgal(3,1000),&
+            dr12v4_lowz_N_numgal(3,1000),dr12v4_lowz_S_numgal(3,1000)
+  character(charlen) :: dr12v4_cmass_N_numgal_file = '../datfiles/nbar-cmass-dr12v4-N-Reid.dat',&
+                      dr12v4_cmass_S_numgal_file = '../datfiles/nbar-cmass-dr12v4-S-Reid.dat',&
+                      dr12v4_lowz_N_numgal_file = '../datfiles/nbar-lowz-dr12v4-N-Reid.dat',&
+                      dr12v4_lowz_S_numgal_file = '../datfiles/nbar-lowz-dr12v4-S-Reid.dat'
+  real(rt), parameter :: numgal_zmin=0.0, numgal_zmax=1.0
+  integer, parameter  :: numgal_nbin = 200
+  real(rt), parameter :: numgal_dz = (numgal_zmax-numgal_zmin) / dble(numgal_nbin)
+  real(rt) :: numgals(numgal_nbin), numgal_zcenters(numgal_nbin), redbin_weights(6,numgal_nbin)
+  logical :: numgal_inited = .false.
+  real(rt) :: redbin_edges(7) = (/ 0.15_rt,  0.2741_rt, 0.3510_rt, 0.43_rt, 0.51_rt,  0.5720_rt, 0.6929_rt  /)
+
+  contains
+
+  subroutine numgal_init()
+    integer  :: i,j,iredbin,i1,i2
+    character:: tmpchar
+    real(rt) :: zcen,zlow,zhigh,nbar,wfkp,shell_vol,numgal
+    
+    numgals = 0.0_rt
+    do i = 1, 4
+      if(i.eq.1) open(82785,file=dr12v4_lowz_N_numgal_file,action='read')
+      if(i.eq.2) open(82785,file=dr12v4_lowz_S_numgal_file,action='read')
+      if(i.eq.3) open(82785,file=dr12v4_cmass_N_numgal_file,action='read')
+      if(i.eq.4) open(82785,file=dr12v4_cmass_S_numgal_file,action='read')
+      do j = 1, 2
+        read(82785,*) tmpchar
+      enddo
+      do j = 1, numgal_nbin
+        read(82785,*)zcen,zlow,zhigh,nbar,wfkp,shell_vol,numgal
+        if(zcen .gt. 0.43 .and. (i.eq.1.or.i.eq.2)) cycle
+        if(zcen .lt. 0.43 .and. (i.eq.3.or.i.eq.4)) cycle
+        numgals(j) = numgals(j) + numgal
+      enddo
+    enddo
+
+    print *, 'Finishing initialization of #-gal.'
+    do j = 1, numgal_nbin
+      numgal_zcenters(j) = numgal_zmin+numgal_dz*(j-0.5)
+      !print *, real(numgal_zmin+numgal_dz*(j-1)), real(numgal_zmin+numgal_dz*j), numgals(j)
+    enddo
+
+    redbin_weights = 0.0_rt
+    do iredbin = 1, 6
+      zlow=redbin_edges(iredbin); zhigh = redbin_edges(iredbin+1)
+      i1=floor(zlow/numgal_dz+0.0001)+1; i2=ceiling(zhigh/numgal_dz-0.00001)
+      do i = i1+1,i2-1
+        redbin_weights(iredbin,i) = numgals(i)
+      enddo
+      redbin_weights(iredbin,i1) = (numgal_zmin+(i1)*numgal_dz - zlow) / numgal_dz * numgals(i1)
+      redbin_weights(iredbin,i2) = (zhigh - (numgal_zmin+(i2-1)*numgal_dz)) / numgal_dz * numgals(i2)
+      print *, 'iredbin = ', iredbin
+!      print *, zlow, numgal_zmin+(i1)*numgal_dz,  (numgal_zmin+(i2-1)*numgal_dz), zhigh
+      print *, 'weights in redshift bins: '
+      do i = 1, numgal_nbin
+        if (redbin_weights(iredbin,i) .ge. 0.00001) &
+          print *,  numgal_zcenters(i), real(redbin_weights(iredbin,i))
+      enddo
+    enddo
+    numgal_inited = .true.
+  end subroutine numgal_init
+
+
+  
+
+end module redbin_weights_bossdr12_6bins
+
 module LSS_ximu_tools
 use cosmology
+use redbin_weights_bossdr12_6bins
 implicit none
   
 
@@ -568,7 +658,7 @@ contains
         deltas = smax_covmock / dble(nbins_covmock)
         do i = 1, N1
         do j = 1, N2
-          call smuintxi(smutab_covmock, deltas, nbins_covmock, mubins_covmock, &
+          call XiFun(smutab_covmock, deltas, nbins_covmock, mubins_covmock, &
             anglemin=1.0_rt-mucuts(j), anglemax=1.0_rt, &
             smin=ints1, smax=ints2, &
             nummuedge=mubins(i)+1, &
@@ -751,7 +841,7 @@ contains
         do i = 1, N1
         do j = 1, N2
           tmpX = 0.0_rt
-          call smuintxi(smutab_sysmock, deltas, nbins_sysmock, mubins_sysmock, &
+          call XiFun(smutab_sysmock, deltas, nbins_sysmock, mubins_sysmock, &
             anglemin=1.0_rt-mucuts(j), anglemax=1.0_rt, &
             smin=ints1, smax=ints2, &
             nummuedge=mubins(i)+1, &
@@ -808,8 +898,8 @@ contains
         do j = 1, N2
           do iz = 2, nz
             dintxi_syscor(1:mubins(i)-1,i,j,iz-1) = &
-              polyfitY(mumids(1:mubins(i)-1,i,j),dintxi_syscor(1:mubins(i)-1,i,j,iz-1),mubins(i)-1,polyfitdeg) ! using exact values of mumids for polyfit; almost no effect on the resulted chisq values
-!              polyfitY(X(1:mubins(i)-1),dintxi_syscor(1:mubins(i)-1,i,j,iz-1),mubins(i)-1,polyfitdeg)
+              polyfitY(X(1:mubins(i)-1),dintxi_syscor(1:mubins(i)-1,i,j,iz-1),mubins(i)-1,polyfitdeg)
+!              polyfitY(mumids(1:mubins(i)-1,i,j),dintxi_syscor(1:mubins(i)-1,i,j,iz-1),mubins(i)-1,polyfitdeg) ! using exact values of mumids for polyfit; almost no effect on the resulted chisq values
           enddo
         enddo
       enddo
@@ -1174,8 +1264,9 @@ contains
 !                    smutab2[is2][iangle2][row3] /= smutab2[is2][iangle2][save_counts_row]
 !    return smutab2
   end subroutine DSMapping
-  
-  subroutine smuintxi(smutab, deltas, numnbins, nummubins, anglemin, anglemax, smin, smax, nummuedge, intxi, mumids)
+
+  ! standard function of \int xi ds as a function of mu
+  subroutine XiFun_std(smutab, deltas, numnbins, nummubins, anglemin, anglemax, smin, smax, nummuedge, intxi, mumids)
     ! argument
     integer, intent(in)  :: numnbins, nummubins, nummuedge
     real(rt), intent(in) :: smutab(numnbins,nummubins,3), deltas,  &
@@ -1198,22 +1289,24 @@ contains
     do j = 2, nummuedge
       angleindices(j) = angleindices(j-1) + dangleindex
     enddo
-    if(testprint) print *, 'real(angleindices) = ', real(angleindices)
+    if(testprint) print *, ' (XiFun_std) real(angleindices) = ', real(angleindices)
     do i = 1, nummuedge
-      if(testprint) print *, i, angleindices(i) * deltamu
+      if(testprint) print *, ' (XiFun_std) i, angleindics(i)*deltamu = ', i, angleindices(i) * deltamu
     enddo
     
     ! This only holds for deltas eq 1!
     sindex1 = int(smin / deltas+1.5)
     sindex2 = int(smax / deltas+0.5)
+    if(testprint) print *,  ' (XiFun_std) smin, smax, deltas, sindex1, sindex2 = ', &
+       smin, smax, deltas, sindex1, sindex2
     if(abs(deltas-1.0).gt.1.0e-5) then
-      print *, ' (smuintxi) Warning! deltas not equal to 1. May have significant error in the range of integral!'
+      print *, ' (XiFun) Warning! deltas not equal to 1. May have significant error in the range of integral!'
       print *, ' deltas = ' , deltas
     endif
     if(testprint) print *, 'sindex1, sindex2 = ', sindex1, sindex2
         
     if(sindex2 > numnbins) then
-      print *, ' (smuintxi) WARNING!! index of s outflow: sindex, numnbins = ', sindex2, numnbins, &
+      print *, ' (XiFun) WARNING!! index of s outflow: sindex, numnbins = ', sindex2, numnbins, &
         '; forcing sindex2 equal to numnbins'
       stop
       sindex2 = numnbins
@@ -1276,7 +1369,87 @@ contains
       intxi(j) = intxi(j) + xi 
     enddo
     enddo
-  end subroutine smuintxi
+  end subroutine XiFun_std
+  
+  ! \int xi ds as a function of mu, generalized form (for 2D contour analysis)
+  ! 2bin
+  subroutine XiFun(smutab, deltas, numnbins, nummubins, anglemin, anglemax, smin, smax, nummuedge, intxi, mumids)
+  !!!!! To be check!!!! Very , very , very == wrong!!! Check the many integers & binnumbers !!!
+    ! argument
+    integer, intent(in)  :: numnbins, nummubins, nummuedge!(nummubins / gbnumsbin)
+    real(rt), intent(in) :: smutab(numnbins,nummubins,3), deltas,  &
+      anglemin,anglemax, smin,smax ! range of s,mu to be integrated
+    real(rt), intent(out) :: intxi(nummuedge-1)
+    real(rt), intent(out), optional :: mumids(nummuedge-1) ! middle value of mu in each mu-bin 
+    ! variable
+    real(rt) :: deltamu, angleindices(nummuedge), dangle, dangleindex, mids, k1,k2, sedges(1000)
+!      DD,DR,RR,xi, dk,k1,k2, mids, tmpintxis(nummuedge-1,2)
+    integer :: actual_nummuedge, i,j,i1,i2
+    logical :: testprint=.false.
+
+
+!!    print *, 'Number of bins: numnbins, mumubins, nummuedge = ', numnbins, nummubins, nummuedge
+!    print *, 'angle range: ', anglemin, anglemax
+
+    intxi = 0.0_rt
+    deltamu = 1.0 / dble(nummubins)
+    
+    ! first of all, decide the fractional bins in angular space
+    actual_nummuedge = (nummuedge-1) / gbnumsbin +1
+!    print *, 'actual_nummuedge = ', actual_nummuedge
+    dangle = (anglemax-anglemin) / dble(actual_nummuedge-1)
+    dangleindex = dangle/deltamu
+    angleindices(1) = anglemin / deltamu
+    do j = 2, actual_nummuedge
+      angleindices(j) = angleindices(j-1) + dangleindex
+    enddo
+    if(testprint) print *, 'real(angleindices) = ', real(angleindices)
+    do i = 1, nummuedge
+      if(testprint) print *, i, angleindices(i) * deltamu
+    enddo    
+    
+    if(present(mumids)) then
+      do j = 1,actual_nummuedge-1
+	k1 = floor(angleindices(j)+1+0.00001) 
+	k2 = floor(angleindices(j+1)+0.00001)
+	mumids(j) = dble((k1-1) + k2)/2.0_rt*deltamu
+      enddo
+!      print *, 'mumids = ', mumids
+    endif
+
+!!    call XiFun_std(smutab, deltas, numnbins, nummubins, anglemin, anglemax, smin, smax, nummuedge, intxi)
+!!    print *, 'intxi from standard XiFun: ', intxi
+!    return
+
+    
+    if(mod((nummuedge-1), gbnumsbin) .ne.0) then
+      print *, 'Error (XiFun)! numsbin incompatable with total bins: ', (nummuedge-1), gbnumsbin
+      stop
+    endif
+    
+    ! 1. Check: is that 
+    
+    sedges(1)  = smin 
+    sedges(2)  = smax
+    sedges(3)  = smax 
+    
+    intxi = 0.0_rt
+    do i = 1, gbnumsbin
+      i1 = (actual_nummuedge-1) * (i-1) + 1
+      i2 = i1 + actual_nummuedge -2
+!      print *, i1, i2, sedges(i), sedges(i+1)
+      call XiFun_std(smutab, deltas, numnbins, nummubins, anglemin, anglemax, &
+      	sedges(i), sedges(i+1), actual_nummuedge, intxi(i1:i2))
+!!      print *, 'loop = ', i
+!!      print *, 'i2-i1+1, actual_nummuedge = ', i2-i1+1, actual_nummuedge
+!!      print *, 'intxi(i1:i2)  = ', intxi(i1:i2)
+    enddo
+!    print *, '**Finaly, intxi = ', intxi
+!    stop
+!11.102650094483595        10.485374549922113        11.259850842068577        12.053443999700688        12.886048021969620        13.666540539278243        14.144060785526161        14.471828005713531        14.742092741015004        15.039291591991976        1.4832499704521103        1.6759450472752717        2.0541168689675517        2.3899646754337582        2.9534279613576135        3.3712476554309392        3.7423458309859017        3.9567703564102974        3.9376723411126049        3.9704822516105036      
+!11.102650094483595        10.485374549922113        11.259850842068577        12.053443999700688        12.886048021969620        13.666540539278243        14.144060785526161        14.471828005713531        14.742092741015004        15.039291591991976        1.4832499704521103        1.6759450472752717        2.0541168689675517        2.3899646754337582        2.9534279613576135        3.3712476554309392        3.7423458309859017        3.9567703564102974        3.9376723411126049        3.9704822516105036 
+!12.585900064935709        12.161319597197386        13.313967711036131        14.443408675134448        15.839475983327233        17.037788194709179        17.886406616512065        18.428598362123829        18.679765082127609        19.009773843602481
+  end subroutine XiFun
 
 ! normalize an array: amplitude shifted to 1; skip the LAST element
   subroutine normfun(A,nA,Anormed)
@@ -1286,6 +1459,8 @@ contains
     real(rt) :: avg
     integer :: imid, i
     avg = sum(A) / dble(nA)
+!    i = nA / 2
+!    avg = sum(A(1:i)) / dble(i)
     imid = nA / 2 + 1
 !    do i = 1, imid-1
     do i = 1, nA-1
@@ -1477,7 +1652,7 @@ contains
         do i1 = 1, N1
         do i2 = 1, N2
 !         print *, ' (smu_ximu_CalcOmWChisqs) Compute \int xi...'
-	  call smuintxi(smutab_data, deltas2, nbins_data, mubins_data, &
+	  call XiFun(smutab_data, deltas2, nbins_data, mubins_data, &
 	    anglemin=1.0_rt-mucuts(i2), anglemax=1.0_rt, &
 	    smin=ints1, smax=ints2, &
 	    nummuedge=mubins(i1)+1, &
@@ -1596,7 +1771,7 @@ contains
     smutabstds, smutabstds_inited, & ! xi(s,mu) table of baseline cosmologies
     chisqs_nosyscor, chisqs_syscor, & ! values of chisqs, separate schemes
     chisqs_nosyscor_all, chisqs_syscor_all, &! values of chisqs, averaged over all schemes, correction factor for covmat (D, m1, m2) considered
-    weightedstds, avg_counts & ! assign different weights to the "standard" cosmologies
+    weightedstds, avg_counts, VolumeWeightedDAH & ! assign different weights to the "standard" cosmologies
     )
     !arguments
     integer, intent(in) ::  numomwstds
@@ -1608,21 +1783,55 @@ contains
     real(rt), intent(out) :: chisqs_nosyscor(n1,n2,nz-1), chisqs_syscor(n1,n2,nz-1), &
        chisqs_nosyscor_all(nz-1), chisqs_syscor_all(nz-1)
     logical, intent(in) :: weightedstds, avg_counts
+    logical, intent(in), optional :: VolumeWeightedDAH
     
     ! variables
     real(rt) :: smutab_data(nbins_data,mubins_data,3), smutab_data1(nbins_data,mubins_data,3)
     real(rt) :: smin_mapping=min(1.0_rt,ints1*0.8_rt), smax_mapping=ints2*1.2_rt, &
       DAstd,DAnew,Hstd,Hnew, deltas1,deltas2, sumDAHweights,DAHweights(numomwstds,nz), &
+      DAvalues(numgal_nbin),Hvalues(numgal_nbin),DAarray(numgal_nbin),Harray(numgal_nbin), &
+      DAstds(nz,numomwstds),Hstds(nz,numomwstds),&
       intxis(maxval(mubins),N1,N2,nz,numomwstds), intxi(maxval(mubins)), dintxi(maxval(mubins)), & 
       factD,factM1,factM2
     type(omwpar) :: parstd
 !    character(len=1000) :: tmpstr,tmpstr1,tmpstr2,tmpstr3,tmpstr4,tmpstr5,tmpstr6,tmpstr7,tmpstr8,tmpstr9,&
 !      tmpstr10,tmpstr11,tmpstr12,&
 !      nowchisqstr,filenames(N1,N2), nowfile, filename_allsch
-    integer ::  i,j,k,iz,iomwstds,iomwstds2,i1,i2, n
+    integer ::  i,j,k,iz,iomwstds,iomwstds2,i1,i2,i_numgal, n
 !    integer, parameter :: basefileunit = 58483
-    logical :: debug_calcchisq = .false.
+    logical :: numgal_weighted=.false., debug_calcchisq = .false.
     
+    if(present(VolumeWeightedDAH)) then
+      numgal_weighted=VolumeWeightedDAH
+    else
+      numgal_weighted=.false.
+    endif
+    
+
+     do iomwstds = 1, numomwstds
+       parstd%omegam = omstds(iomwstds); parstd%w = wstds(iomwstds)     
+       if(numgal_weighted) then
+         if(.not. numgal_inited) call numgal_init()
+         do i = 1, numgal_nbin
+           DAvalues(i) = DAz_wcdm(parstd,numgal_zcenters(i))
+           Hvalues(i)  = Hz_wcdm (parstd,numgal_zcenters(i))
+         enddo
+        endif
+        do iz = 1, nz
+            if(.not.numgal_weighted) then
+	            DAstds(iz,iomwstds) = DAz_wcdm(parstd,zeffs(iz)); Hstds(iz,iomwstds) = Hz_wcdm(parstd,zeffs(iz))
+	    else
+          	    DAarray = DAvalues(1:numgal_nbin)*redbin_weights(iz,1:numgal_nbin)
+          	    Harray  = Hvalues(1:numgal_nbin) *redbin_weights(iz,1:numgal_nbin)
+          	    DAstds(iz,iomwstds) = sum(DAarray(1:numgal_nbin)) / sum(redbin_weights(iz,1:numgal_nbin))
+          	    Hstds(iz,iomwstds)  = sum(Harray(1:numgal_nbin))  / sum(redbin_weights(iz,1:numgal_nbin))
+          	    !print *, parstd%omegam, parstd%w
+          	    !print *, 'DAs:', DAstds(iz,iomwstds), DAz_wcdm(parstd,zeffs(iz))
+          	    !print *, 'Hs:',  Hstds(iz,iomwstds),  Hz_wcdm(parstd,zeffs(iz))
+            endif
+       enddo
+     enddo
+
     ! 1. Initialization
     ! 1.1 Check covmat files ready or not
     do i=1,N1
@@ -1652,7 +1861,7 @@ contains
         do iomwstds = 1, numomwstds
           do iz  = 1, nz
             parstd%omegam = omstds(iomwstds); parstd%w = wstds(iomwstds)
-            DAstd = DAz_wcdm(parstd,zeffs(iz)); Hstd = Hz_wcdm(parstd,zeffs(iz))
+            DAstd=DAstds(iz,iomwstds); Hstd=Hstds(iz,iomwstds)
             DAnew = DAs(iz); Hnew = Hs(iz)
             DAHweights(iomwstds,iz) = 1.0 / ((DAnew/DAstd - 1.0)**2.0 + (Hnew/Hstd - 1.0)**2.0 + 0.0001)
           enddo
@@ -1677,7 +1886,8 @@ contains
 !       print *, ' (smu_ximu_CalcOmWChisqs) Do DSMapping... iz = ', iz
 	if(.not.avg_counts) then
 	  parstd%omegam = omstds(iomwstds); parstd%w = wstds(iomwstds)
-          DAstd = DAz_wcdm(parstd,zeffs(iz)); Hstd = Hz_wcdm(parstd,zeffs(iz))
+          !DAstd = DAz_wcdm(parstd,zeffs(iz)); Hstd = Hz_wcdm(parstd,zeffs(iz))
+          DAstd=DAstds(iz,iomwstds); Hstd=Hstds(iz,iomwstds)
           DAnew = DAs(iz); Hnew = Hs(iz)
           call DSMapping(smutabstds(:,:,:,iz,iomwstds), nbins_database, mubins_database, smutab_data, &
 	    nbins_data, mubins_data, DAstd, DAnew, Hstd, Hnew, deltas1,  deltas2,  smin_mapping, smax_mapping)
@@ -1687,7 +1897,8 @@ contains
 	  smutab_data = 0.0_rt
 	  do iomwstds2 = 1, numomwstds
 	    parstd%omegam = omstds(iomwstds2); parstd%w = wstds(iomwstds2)
-	    DAstd = DAz_wcdm(parstd,zeffs(iz)); Hstd = Hz_wcdm(parstd,zeffs(iz))
+            !DAstd = DAz_wcdm(parstd,zeffs(iz)); Hstd = Hz_wcdm(parstd,zeffs(iz))
+            DAstd=DAstds(iz,iomwstds); Hstd=Hstds(iz,iomwstds)
             call DSMapping(smutabstds(:,:,:,iz,iomwstds2), nbins_database, mubins_database, smutab_data1, &
 	      nbins_data, mubins_data, DAstd, DAnew, Hstd, Hnew, deltas1,  deltas2,  smin_mapping, smax_mapping)
 	    smutab_data(:,:,:) = smutab_data(:,:,:) + &
@@ -1699,7 +1910,7 @@ contains
         	print *, '####################################'
         	print *, 'iz = ',iz
 		print *, "Checking: DAstd, DAnew, Hstd, Hnew = ", DAstd, DAnew, Hstd, Hnew
-		do i = 30, 31
+		do i = 1, 15
 		  j = 1
 		  print *, i, smutab_data(i,j,1:3), (smutab_data(i,j,1)-2*smutab_data(i,j,2))/smutab_data(i,j,3)+1.0_rt
 		enddo	
@@ -1708,17 +1919,23 @@ contains
         do i1 = 1, N1
         do i2 = 1, N2
 !         print *, ' (smu_ximu_CalcDAHChisqs) Compute \int xi...'
-	  call smuintxi(smutab_data, deltas2, nbins_data, mubins_data, &
+	  call XiFun(smutab_data, deltas2, nbins_data, mubins_data, &
 	    anglemin=1.0_rt-mucuts(i2), anglemax=1.0_rt, &
 	    smin=ints1, smax=ints2, &
 	    nummuedge=mubins(i1)+1, &
 	    intxi=intxi(1:mubins(i1)))
 !         print *, ' (smu_ximu_CalcDAHChisqs) Normalize \int xi...'
+<<<<<<< HEAD:src/LSS_main_LSS_ximu_save.f90
 	  call normfun(intxi(1:mubins(i1)),mubins(i1),intxis(1:mubins(i)-1,i1,i2,iz,iomwstds)) 
 	  if(debug_calcchisq .and. mubins(i1).eq.25 .and.i2.eq.1) then
 	  	print *, 'intxi = ', real(intxi(1:25))
+=======
+	  call normfun(intxi(1:mubins(i1)),mubins(i1),intxis(1:mubins(i1)-1,i1,i2,iz,iomwstds)) 
+	  if(debug_calcchisq .and. i1.eq.1 .and.i2.eq.1) then
+	  	print *, 'intxi = ', real(intxi(1:mubins(i1)))
+>>>>>>> 143ee96d83217bfc821280a8ac55fc7bfcaa2bb3:src/LSS_main_LSS_ximu.f90
 		print *
-		print *, 'intxi (normed) = ', real(intxis(1:24,i1,i2,iz,iomwstds))
+		print *, 'intxi (normed) = ', real(intxis(1:mubins(i1)-1,i1,i2,iz,iomwstds))
 	  endif
 	enddo!        do i1 = 1, N1
 	enddo!        do i2 = 1, N2
@@ -1963,10 +2180,10 @@ subroutine check_load_files()
 
 
 	
-	!smuintxi(smutab, deltas, nbins, mubins, anglemin, anglemax, smin, smax, nummuedge, intxi)
+	!XiFun(smutab, deltas, nbins, mubins, anglemin, anglemax, smin, smax, nummuedge, intxi)
 	print *, '####################################'
 	print *, 'Checking of smutab_database:'
-	call smuintxi(smutab_data, deltas2, nbins_data, mubins_data, 0.05_rt, 1.0_rt, 6.0_rt, 40.0_rt, 26, intxi(1:25))
+	call XiFun(smutab_data, deltas2, nbins_data, mubins_data, 0.05_rt, 1.0_rt, 6.0_rt, 40.0_rt, 26, intxi(1:25))
 	print *, 'intxi = ', real(intxi(1:25))
 	print *, 'python result is '
 	print *, '[13.53979955829141, 12.888214311950264, 13.051479126899061, ...'
