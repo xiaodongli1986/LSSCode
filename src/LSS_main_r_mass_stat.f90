@@ -8,7 +8,7 @@ implicit none
 	real(dl) :: rmin, rmax, massmin, massmax, x,y,z,mass,r, tmp(1000), rmin2, rmax2, massmin2, massmax2, mass1,mass2,masscut, &
 		xmin,ymin,zmin,xmax,ymax,zmax, vol, frac_surface
 	real(dl), allocatable :: redges(:), massedges(:), massmins(:), massmaxs(:)
-	integer :: numarg, numrbin,nummassbin, xcol,ycol,zcol,masscol,maxcol, i,j,nowrbin,nowmassbin
+	integer :: numarg, numrbin,nummassbin, xcol,ycol,zcol,masscol,maxcol, i,j,nowrbin,nowmassbin, skiprow
 	integer(8) :: nlines, nlines_degrade, numoutrange, numbigmass, numdegrade, num,num1,num2
 	integer(8), allocatable :: binnednum(:,:)
 	logical :: logmass, dodegrade
@@ -18,6 +18,7 @@ implicit none
 	printstr = "Usage: EXE -input intpufilename -rmin rmin "//&
 		'-rmax rmax -massmin massmin -massmax massmax '//&
 		'-logmass logmass -numrbin numrbin -nummassbin nummassbin '//&
+		'-skiprow skiprow'//&
 		'-xcol xcol -ycol ycol -zcol zcol -masscol masscol '//&
 		'-dodegrade dodegrade -numdegrade numdegrade -frac_surface frac_surface'//&
 		'### dodegrade will choose a suitable masscut and '//&
@@ -29,6 +30,7 @@ implicit none
 	xcol=1; ycol=2; zcol=3; masscol=4
 	numrbin = 1; nummassbin = 100
 	frac_surface=1.0
+        skiprow=0
 	
 	numarg = iargc()
 	if(numarg.le.1) then
@@ -56,6 +58,8 @@ implicit none
 			read(tmpstr2,*) logmass
 		elseif(trim(adjustl(tmpstr1)).eq.'-nummassbin') then
 			read(tmpstr2,*) nummassbin
+		elseif(trim(adjustl(tmpstr1)).eq.'-skiprow') then
+			read(tmpstr2,*) skiprow
 		elseif(trim(adjustl(tmpstr1)).eq.'-xcol') then
 			read(tmpstr2,*) xcol
 		elseif(trim(adjustl(tmpstr1)).eq.'-ycol') then
@@ -134,6 +138,11 @@ implicit none
 	massmin2=rmin2;massmax2=-massmin2
 	open(unit=1,file=inputfilename,action='read')
 	do while(.true.)
+                if(nlines+1<=skiprow) then
+                        read(1,*,end=101) tmpstr1
+                        nlines = nlines+1
+                        cycle
+                endif
 		read(1,*,end=101) tmp(1:maxcol)
 		nlines = nlines+1
 		x=tmp(xcol); y=tmp(ycol); z=tmp(zcol); mass=tmp(masscol)
@@ -235,12 +244,19 @@ implicit none
 	
 	! TBD...
 	nlines_degrade =0
+        nlines = 0
 	open(unit=1,file=inputfilename,action='read')
 	open(unit=2,file=outputfilename1)
 	open(unit=3,file=outputfilename2)
 	do while(.true.)
+                if(nlines+1<=skiprow) then
+                        read(1,*,end=102) tmpstr1
+                        nlines = nlines+1
+                        cycle
+                endif
 		read(1,'(A)',end=102) tmpstr1
 		read(tmpstr1,*) tmp(1:maxcol)
+                nlines = nlines+1
 		x=tmp(xcol); y=tmp(ycol); z=tmp(zcol); mass=tmp(masscol)
 		if(mass > masscut) then
 			write(2,'(A)') trim(adjustl(tmpstr1))
