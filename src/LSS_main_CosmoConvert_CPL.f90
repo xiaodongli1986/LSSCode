@@ -91,9 +91,26 @@ implicit none
 	call cosmo_funs_init(.true.)
 	gb_omegam = omin; gb_w = win; gb_wa = wain; gb_h = 0.73_dl;
 	call de_calc_comovr()
-	write(tmpstr1, 'f16.4') waout
+
+!Test
+        if(.false.) then
+        	gb_omegam = omin; gb_w = win; gb_wa = wain; gb_h = 0.73_dl;
+        	call de_calc_comovr()
+                print *, gb_omegam, gb_w, gb_wa
+                print *, de_zfromintpl(100.0d0)
+                print *, de_get_comovr(0.5d0)
+        	gb_omegam = omin; gb_w = win; gb_wa = waout; gb_h = 0.73_dl;
+        	call de_calc_comovr()
+                print *, gb_omegam, gb_w, gb_wa
+                print *, de_zfromintpl(100.0d0)
+                print *, de_get_comovr(0.5d0)
+                stop
+        endif
+!End Test        
+
+	write(tmpstr1, '(f16.4)') waout
 	outputfilename = trim(adjustl(inputfilename))//trim(adjustl(suffix))//'.'//trim(adjustl(get_omwstr(omout,wout)))&
-         //'_wa'//trim(adjust(tmpstr1))
+         //'_wa'//trim(adjustl(tmpstr1))
 	outputinfo = trim(adjustl(outputfilename))//'.info'
 
 	open(unit=100,file=outputinfo)
@@ -160,7 +177,7 @@ implicit none
 	
 	! output cosmology
 	call cosmo_funs_init(.true.)
-	gb_omegam = omout; gb_w = wout; gb_h = 0.73_dl;
+	gb_omegam = omout; gb_w = wout; gb_wa = waout; gb_h = 0.73_dl;
 	call de_calc_comovr()
 
 	! output to file

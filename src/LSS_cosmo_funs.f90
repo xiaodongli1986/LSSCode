@@ -93,6 +93,7 @@ contains
 		enddo
 		! gf(z)
 		!!  for the highest redshift point
+                if(.false.) then
 		iofz30 = de_iz(30.0_dl)
 		if(iofz30 < de_num_intpl) then
 			maxi = iofz30
@@ -113,6 +114,7 @@ contains
 			zright = de_zi(i)
 			de_gfz_data(i) = RK(dgfdz, zleft, gfleft, zright, 1)
 		enddo
+                endif
 	end subroutine de_calc_comovr
 	
   !------------------------------------------
@@ -191,10 +193,13 @@ contains
   !------------------------------------------
   ! Hubble parameter in unit of km/s/Mpc
   !------------------------------------------	
+        real(dl) function ezsq(z)
+                real(dl) :: z
+		ezsq = gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w))*(1.0+z)**(3.0*(1.0+gb_w+gb_wa)) * exp(-3.0*gb_wa*z/(1.0+z))
+        end function ezsq
   	real(dl) function Hz(z)
   		real(dl) :: z
-  		Hz = 100.0*gb_h*&
-                sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w+gb_wa)) *exp(-3.0*gb_wa*z/(1.0+z)))
+  		Hz = 100.0*gb_h*sqrt(ezsq(z))
   		!sqrt(gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w)))
   	end function Hz
   	real(dl) function inv_Hz(z)
@@ -214,14 +219,11 @@ contains
 	real(dl) function omegamz(z)
 		! Dummy
 		real(dl) :: z
-		! Local
-		real(dl) :: ezsq
                 if(gb_wa .ne. 0.0) then
-                        print *, 'Error (dgfdz): wa should be 0!', gb_wa
+                        print *, 'Error (omegamz): wa should be 0!', gb_wa
                         stop
                 endif
-		ezsq = gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w))
-		omegamz = gb_omegam*(1.0+z)**3.0 / ezsq
+		omegamz = gb_omegam*(1.0+z)**3.0 / ezsq(z)
 	end function omegamz
   	
   !------------------------------------------
@@ -231,17 +233,16 @@ contains
 		! Dummy
 		real(dl), intent(in) :: z,gf
 		! Local
-		real(dl) ::  Omegamz, dlnHdz, esq
+		real(dl) ::  dlnHdz, esq
                 if(gb_wa .ne. 0.0) then
                         print *, 'Error (dgfdz): wa should be 0!', gb_wa
                         stop
                 endif
-		esq     =  gb_omegam*(1.0d0+z)**3.0d0 + (1.0d0-gb_omegam)*(1.0d0+z)**(3.0d0*(1.0d0+gb_w))
+		esq     =  ezsq(z)
 		dlnHdz  =  gb_omegam*(1.0d0+z)**3.0d0 + (1.0d0+gb_w)*(1.0d0-gb_omegam)*(1.0d0+z)**(3.0d0*(1.0d0+gb_w))
 		dlnHdz  =  1.5d0*dlnHdz/(1.0d0+z)/esq
-		Omegamz =  gb_omegam * (1.0d0+z)**3.0d0 / esq
 
-		dgfdz   =  (1.0d0/(1.0d0+z)) * (gf**2.0d0 - ((1.0d0+z)*dlnHdz-2.0d0)*gf - 1.5d0*Omegamz)
+		dgfdz   =  (1.0d0/(1.0d0+z)) * (gf**2.0d0 - ((1.0d0+z)*dlnHdz-2.0d0)*gf - 1.5d0*omegamz(z))
 	end function dgfdz
   	
   !------------------------------------------
