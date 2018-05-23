@@ -38,9 +38,10 @@ EXE36 = ../bin/LSS_XYZToRaDecZ
 EXE37 = ../bin/LSS_converttoRhct
 EXE38 = ../bin/LSS_LSS_ximu
 EXE39 = ../bin/LSS_CosmoConvert_CPL
+EXE40 = ../bin/LSS_XYZWToRaDecZW
 OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o
-F90C = ifort -heap-arrays -diag-disable 6009 #gfortran #mpif90 -heap-arrays
-OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o #LSS_kdtree3pcf.o kdtree2.o
+#F90C = ifort -heap-arrays -diag-disable 6009 #gfortran #mpif90 -heap-arrays
+#OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o #LSS_kdtree3pcf.o kdtree2.o
 F90C = ifort -heap-arrays #gfortran #mpif90 -heap-arrays
 #F90C = ifort -heap-arrays
 #F90C = gfortran
@@ -48,8 +49,8 @@ F90C = ifort -heap-arrays #gfortran #mpif90 -heap-arrays
 F90FLAGS = 
 
 default: $(EXE2)
-nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39)
-all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39)
+nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40)
+all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40)
 
 test: $(EXE0)
 bsk: $(EXE2)
@@ -89,6 +90,7 @@ XYZToRaDecZ: $(EXE36)
 converttoRhct: $(EXE37)
 LSS_ximu: $(EXE38)
 CosmoConvert_CPL: $(EXE39)
+XYZWToRaDecZW: $(EXE40)
 AMTB: AMTB
 
 $(EXE0): $(OBJS) LSS_main_test.o
@@ -171,6 +173,8 @@ $(EXE38): LSS_cosmo_funs.o LSS_main_LSS_ximu.o
 	$(F90C) -o $(EXE38) LSS_tools.o LSS_cosmo_funs.o  LSS_main_LSS_ximu.o
 $(EXE39): LSS_cosmo_funs.o LSS_main_CosmoConvert_CPL.o
 	$(F90C) -o $(EXE39) LSS_tools.o LSS_cosmo_funs.o  LSS_main_CosmoConvert_CPL.o
+$(EXE40): LSS_cosmo_funs.o LSS_main_XYZWToRaDecZW.o
+	$(F90C) -o $(EXE40) LSS_tools.o LSS_cosmo_funs.o  LSS_main_XYZWToRaDecZW.o
 amtb: amtb
 
 
@@ -223,6 +227,7 @@ LSS_main_XYZToRaDecZ: LSS_cosmo_funs.o
 LSS_main_converttoRhct: LSS_cosmo_funs.o
 LSS_main_LSS_ximu: LSS_cosmo_funs.o
 LSS_main_CosmoConvert_CPL: LSS_cosmo_funs.o
+LSS_main_XYZWToRaDecZW: LSS_cosmo_funs.o
 GYPS: GYPS
 #LSS_main.o: LSS_settings_init.o
 #LSS_main.o: LSS_tools.o
@@ -234,4 +239,4 @@ GYPS: GYPS
 	$(F90C) -c $< -o $@
 
 clean :
-	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39)
+	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40)

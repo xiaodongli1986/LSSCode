@@ -82,6 +82,7 @@ while True:
 		continue
 	elif now_str_array[0] == 'OBJS':
 		lastEXE = prev_str_array[0]
+		print lastEXE
 		lastEXEi = int(lastEXE[3:len(lastEXE)])
 		nowEXEi = lastEXEi + 1
 		nowEXE = 'EXE'+str(nowEXEi)

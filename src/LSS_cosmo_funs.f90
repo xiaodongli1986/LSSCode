@@ -195,7 +195,7 @@ contains
   !------------------------------------------	
         real(dl) function ezsq(z)
                 real(dl) :: z
-		ezsq = gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w))*(1.0+z)**(3.0*(1.0+gb_w+gb_wa)) * exp(-3.0*gb_wa*z/(1.0+z))
+		ezsq = gb_omegam*(1.0+z)**3.0 + (1.0-gb_omegam)*(1.0+z)**(3.0*(1.0+gb_w+gb_wa)) * exp(-3.0*gb_wa*z/(1.0+z))
         end function ezsq
   	real(dl) function Hz(z)
   		real(dl) :: z

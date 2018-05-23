@@ -7,18 +7,19 @@ use LSS_cosmo_funs
 
 implicit none
 
-	real(dl) :: xyzmin,xyzmax,dxyz, redshift,omegam,w,dist, x,y,z,vx,vy,vz, xmin,xmax,ymin,ymax,zmin,zmax, tmp(1000), &
-		zobs, shiftdist, shiftedcord, volscale, voldft, volnow, rescalefac
+	real(dl) :: xyzmin,xyzmax,dxyz, redshift,omegam,w,dist,boxdistance, x,y,z,vx,vy,vz,vr,costheta, xmin,xmax,ymin,ymax,zmin,zmax, tmp(1000), &
+		zobs, shiftdist,shiftrat, shiftedcord, volscale, voldft, volnow, rescalefac
 	integer :: xcol,ycol,zcol,vxcol,vycol,vzcol,maxcol, i,j, numshiftback, numshiftbackorig, skiprow
 	integer(8) :: numarg, nlines
 	character(len=char_len) :: printstr, inputfilename, outputname, outputfilenamex,outputfilenamey,outputfilenamez,&
-		outputfilenameinfo, tmpstr1,tmpstr2, suffix
-	logical :: shiftx,shifty,shiftz, dovoleff
+		outputfilenamer,outputfilenameinfo, tmpstr1,tmpstr2, suffix, outputfilenameshifts, outputfilenamevs
+	character(len=10000) :: shiftstr1, shiftstr2
+	logical :: shiftx,shifty,shiftz,shiftr, dovoleff
 	
 	printstr = 'Usage: EXE -input intpufilename -xyzmin xyzmin '//&
 		'-xyzmax xyzmax -xcol xcol -ycol ycol -zcol zcol '//&
 		'-vxcol vxcol -vycol vycol -vzcol vzcol -redshift redshift '//&
-		'-omegam omegam -w w -shiftx shiftx -shifty shifty -shiftz shiftz '//&
+		'-omegam omegam -w w -shiftx shiftx -shifty shifty -shiftz shiftz -shiftr shiftr'//&
 		'-skiprow skiprow -suffix suffix -dovoleff dovoleff '//&
 		'### xyzmin/xyzmax used to do periodical boundary '//&
 		'condition (shift inside to box if shifted outside by RSD); '//&
@@ -29,7 +30,7 @@ implicit none
 	! Default values
 	xyzmin = -1.0e30; xyzmax = 1.0e30;
 	xcol=1; ycol=2; zcol=3; vxcol=4; vycol=5; vzcol=6; skiprow=0
-	shiftx = .true.; shifty=.false.; shiftz=.false.
+	shiftx = .true.; shifty=.false.; shiftz=.false.; shiftr=.false.;
 	omegam = 0.26; w = -1.0; redshift = 0.0
 	suffix = ''
 	dovoleff = .false.
@@ -74,6 +75,8 @@ implicit none
 			read(tmpstr2,*) shifty
 		elseif(trim(adjustl(tmpstr1)).eq.'-shiftz') then
 			read(tmpstr2,*) shiftz
+		elseif(trim(adjustl(tmpstr1)).eq.'-shiftr') then
+			read(tmpstr2,*) shiftr
 		elseif(trim(adjustl(tmpstr1)).eq.'-skiprow') then
 			read(tmpstr2,*) skiprow
 		elseif(trim(adjustl(tmpstr1)).eq.'-suffix') then
@@ -87,8 +90,8 @@ implicit none
 		endif
 	enddo
 
-	if(.not.shiftx.and..not.shifty.and..not.shiftz) then
-		print *, 'No action! All shifts are .false.: ', shiftx,shifty,shiftz
+	if(.not.shiftx.and..not.shifty.and..not.shiftz.and..not.shiftr) then
+		print *, 'No action! All shifts are .false.: ', shiftx,shifty,shiftz,shiftr
 		stop
 	endif
 
@@ -133,7 +136,10 @@ implicit none
 	outputfilenamex = trim(adjustl(outputname))//'.shiftx'
 	outputfilenamey = trim(adjustl(outputname))//'.shifty'
 	outputfilenamez = trim(adjustl(outputname))//'.shiftz'
+	outputfilenamer = trim(adjustl(outputname))//'.shiftr'
 	outputfilenameinfo = trim(adjustl(outputname))//'.shift.info'
+	outputfilenameshifts = trim(adjustl(outputname))//'.shifts'
+	outputfilenamevs = trim(adjustl(outputname))//'.vs'
 
 	open(unit=100,file=outputfilenameinfo)
 
@@ -141,7 +147,7 @@ implicit none
 	write(*,'(A)')   	'  Settings:'
 	write(*,'(A,A)') 	'   inputfilename:  ', trim(adjustl(inputfilename))
 	write(*,'(A,2f16.7)')   '   bounary of box = ', xyzmin, xyzmax
-	write(*,'(A,3L2)') 	'   RSD shift at x,y,z = ', shiftx, shifty, shiftz
+	write(*,'(A,4L2)') 	'   RSD shift at x,y,z,r = ', shiftx, shifty, shiftz, shiftr
 	write(*,'(A,4f16.7)') 	'   omegam, w, redshift, comov_r(redshift) = ', real(omegam), real(w), real(redshift), real(dist)
 	write(*,'(A,6i3)')  	'   cols of x,y,z,vx,vy,vz: ', xcol,ycol,zcol,vxcol,vycol,vzcol
 	write(*,'(A,i5)')	'   skip rows ', skiprow
@@ -150,7 +156,7 @@ implicit none
 	write(100,'(A)')   	'  Settings:'
 	write(100,'(A,A)') 	'   inputfilename:  ', trim(adjustl(inputfilename))
 	write(100,'(A,2f16.7)')	'   bounary of box = ', xyzmin, xyzmax
-	write(100,'(A,3L2)') 	'   RSD shift at x,y,z = ', shiftx, shifty, shiftz
+	write(100,'(A,4L2)') 	'   RSD shift at x,y,z,r = ', shiftx, shifty, shiftz, shiftr
 	write(100,'(A,4f16.7)') '   omegam, w, redshift, comov_r(redshift) = ', real(omegam), real(w), real(redshift), real(dist)
 	write(100,'(A,6i3)')  	'   cols of x,y,z,vx,vy,vz: ', xcol,ycol,zcol,vxcol,vycol,vzcol
 	write(100,'(A,f10.5)')	'   rescalefac ', rescalefac
@@ -159,6 +165,10 @@ implicit none
 	if(shiftx) open(unit=10,file=outputfilenamex)
 	if(shifty) open(unit=20,file=outputfilenamey)
 	if(shiftz) open(unit=30,file=outputfilenamez)
+	if(shiftr) open(unit=40,file=outputfilenamer)
+
+	open(unit=5,file=outputfilenameshifts)
+	open(unit=6,file=outputfilenamevs)
 
 	nlines =0; numshiftback=0; numshiftbackorig=0
 	xmin = 1.0e30; ymin = 1.0e30; zmin = 1.0e30
@@ -200,9 +210,11 @@ implicit none
 		x = x/rescalefac
 		y = y/rescalefac
 		z = z/rescalefac
+		shiftstr2 = ''
 		if(shiftx) then
 			zobs = redshift + vx * (1.0_dl+redshift) / const_c 
 			shiftdist = de_get_comovr(zobs) - dist
+			write(shiftstr1,'(e14.7)') shiftdist; shiftstr2=trim(adjustl(shiftstr2))//' '//trim(adjustl(shiftstr1))
 			shiftedcord = x + shiftdist
 			if(shiftedcord < xyzmin/rescalefac) then
 				shiftedcord = shiftedcord + dxyz
@@ -216,6 +228,7 @@ implicit none
 		if(shifty) then
 			zobs = redshift + vy * (1.0_dl+redshift) / const_c 
 			shiftdist = de_get_comovr(zobs) - dist
+			write(shiftstr1,'(e14.7)') shiftdist; shiftstr2=trim(adjustl(shiftstr2))//' '//trim(adjustl(shiftstr1))
 			shiftedcord = y + shiftdist
 			if(shiftedcord < xyzmin/rescalefac) then
 				shiftedcord = shiftedcord + dxyz
@@ -229,6 +242,7 @@ implicit none
 		if(shiftz) then
 			zobs = redshift + vz * (1.0_dl+redshift) / const_c 
 			shiftdist = de_get_comovr(zobs) - dist
+			write(shiftstr1,'(e14.7)') shiftdist; shiftstr2=trim(adjustl(shiftstr2))//' '//trim(adjustl(shiftstr1))
 			shiftedcord = z + shiftdist
 			if(shiftedcord < xyzmin/rescalefac) then
 				shiftedcord = shiftedcord + dxyz
@@ -239,6 +253,52 @@ implicit none
 			endif
 			write(30,'(3e15.7)') x, y, shiftedcord
 		endif
+		if(shiftr) then
+			!print *, 'velocity at z direction is really larger than velocity at a single direction... please check it!'; stop
+			boxdistance = sqrt(x**2+y**2+z**2)
+			costheta = (vx*x+vy*y+vz*z) / sqrt(vx**2+vy**2+vz**2) / boxdistance
+			vr = sqrt(vx**2+vy**2+vz**2) * costheta
+			zobs = redshift + vr * (1.0_dl+redshift) / const_c 
+			shiftdist = de_get_comovr(zobs) - dist
+			print *, 'r_obs, dist, shiftr = ', de_get_comovr(zobs), dist, shiftdist
+			write(shiftstr1,'(e14.7)') shiftdist; shiftstr2=trim(adjustl(shiftstr2))//' '//trim(adjustl(shiftstr1)); 
+			write(6,'(4(e15.7))') vx, vy, vz, vr
+			!shiftrat = de_get_comovr(zobs) / dist
+			shiftrat = (boxdistance + shiftdist) / boxdistance
+
+			shiftedcord = x*shiftrat
+			if(shiftedcord < xyzmin/rescalefac) then
+				shiftedcord = shiftedcord + dxyz
+				numshiftback = numshiftback+1
+			elseif(shiftedcord > xyzmax/rescalefac) then
+				shiftedcord = shiftedcord - dxyz
+				numshiftback = numshiftback+1
+			endif
+			x = shiftedcord
+
+			shiftedcord = y*shiftrat
+			if(shiftedcord < xyzmin/rescalefac) then
+				shiftedcord = shiftedcord + dxyz
+				numshiftback = numshiftback+1
+			elseif(shiftedcord > xyzmax/rescalefac) then
+				shiftedcord = shiftedcord - dxyz
+				numshiftback = numshiftback+1
+			endif
+			y = shiftedcord
+
+			shiftedcord = z*shiftrat
+			if(shiftedcord < xyzmin/rescalefac) then
+				shiftedcord = shiftedcord + dxyz
+				numshiftback = numshiftback+1
+			elseif(shiftedcord > xyzmax/rescalefac) then
+				shiftedcord = shiftedcord - dxyz
+				numshiftback = numshiftback+1
+			endif
+			z = shiftedcord
+
+			write(40,'(3e15.7)') x, y, z
+		endif
+		write(5,*) trim(adjustl(shiftstr2))
 		cycle
 101		exit
 	enddo
@@ -246,6 +306,9 @@ implicit none
 	if(shiftx) close(10)
 	if(shifty) close(20)
 	if(shiftz) close(30)
+	if(shiftr) close(40)
+	close(5)
+	close(6)
 
 	write(*,'(A,i10,A,2i10)') ' Finishing processing ', nlines, ' lines; num shifted back (orig, due to RSD) = ', &
 		numshiftbackorig, numshiftback
