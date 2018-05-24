@@ -1812,8 +1812,24 @@ contains
   !---------------------------------------------------------------  	
 	subroutine init_RDSR()
 		character(len=char_len) :: readinfile = &
-			"/home/xiaodongli/software/LSSCode/data/DEC_vs_RAspan-to-DECspan.txt"
+			"/data/DEC_vs_RAspan-to-DECspan.txt"
+			!"/home/xiaodongli/software/LSSCode/data/DEC_vs_RAspan-to-DECspan.txt"
 		integer :: i
+
+                character(len=1000) :: tmppath
+                call system('echo $LSSPATH > LSSCode_tmpfile.dat')
+                open(unit=100,file='LSSCode_tmpfile.dat')
+                read(100,'(A)')  tmppath
+                write(*,*) tmppath
+                close(100)
+                call system('rm LSSCode_tmpfile.dat')
+
+                readinfile = trim(adjustl(tmppath))//"/data/DEC_vs_RAspan-to-DECspan.txt"
+                print *, readinfile
+
+
+
+
 		call count_line_number(readinfile, gb_RDSR_num)
 		gb_RDSR_num = gb_RDSR_num-1
 		if(allocated(gb_RDSR_decs)) deallocate(gb_RDSR_decs)

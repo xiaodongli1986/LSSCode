@@ -13,7 +13,9 @@ ifort is required.
 # How to use it
 
 	Add this to ~/.bashrc
-		export PATH=/home/xiaodongli/software/LSSCode/bin:${PATH}
+		export PATH=/home/yourusername/software/LSSCode/bin:${PATH}
+		export LSSPATH=/home/yourusername/software/LSSCode
+
 
 	Then you can call any program from terminal; type LSS_ and Tab to view them
 
