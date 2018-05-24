@@ -23,12 +23,11 @@ use LSS_BSK
 	gb_i_rantype = gb_noran
 
 	! read in settings
-	omegam=om_dft; w=w_dft
-	print *, 'Default cosmology: omegam, w = ', om_dft, w_dft
+	omegam=100.0; w=100.0;
 	numarg = iargc()
 	if(numarg .le. 0) then
 		print *, 'small numarg: ', numarg
-		write(*,'(A)') ' Usage: ./BSK_calc -om omegam -w w '//&
+		write(*,'(A)') ' Usage: ./BSK_calc -omdft omdft -wdft wdft -om omegam -w w '//&
 			'-input intpufilename -output outputfilname -beta beta '//&
 			'-printinfo printinfo -numNNB numNNB -minimalrcut minimalrcut '//&
 			'-maximalrcut maximalrcut -nglcrosscheck do_nglcrosscheck '//&
@@ -40,7 +39,11 @@ use LSS_BSK
 		if(mod(i,2).eq.0) cycle
 		call getarg(i,tmpstr1)
 		call getarg(i+1,tmpstr2)
-		if(trim(adjustl(tmpstr1)).eq.'-om') then
+		if(trim(adjustl(tmpstr1)).eq.'-omdft') then
+			read(tmpstr2,*) om_dft
+		elseif(trim(adjustl(tmpstr1)).eq.'-wdft') then
+			read(tmpstr2,*) w_dft
+                elseif(trim(adjustl(tmpstr1)).eq.'-om') then
 			read(tmpstr2,*) omegam
 		elseif(trim(adjustl(tmpstr1)).eq.'-w') then
 			read(tmpstr2,*) w
@@ -77,6 +80,10 @@ use LSS_BSK
 			stop
 		endif
 	enddo
+        if(omegam.eq.100.0) omegam = om_dft
+        if(w.eq.100.0) w = om_dft
+	print *, 'Default cosmology: omegam, w = ', om_dft, w_dft
+	print *, 'Using   cosmology: omegam, w = ', omegam, w
 	
 	if(.not.has_outputfilename) then
 		outputfilename = trim(adjustl(inputfilename))//'_output'

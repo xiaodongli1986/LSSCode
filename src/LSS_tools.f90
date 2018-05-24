@@ -1825,7 +1825,7 @@ contains
                 call system('rm LSSCode_tmpfile.dat')
 
                 readinfile = trim(adjustl(tmppath))//"/data/DEC_vs_RAspan-to-DECspan.txt"
-                print *, readinfile
+                !print *, readinfile
 
 
 
