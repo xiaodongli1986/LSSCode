@@ -32,6 +32,7 @@ use LSS_BSK
 			'-printinfo printinfo -numNNB numNNB -minimalrcut minimalrcut '//&
 			'-maximalrcut maximalrcut -nglcrosscheck do_nglcrosscheck '//&
 			'-ngldir ngldir -numdrop numdrop -dropstep dropstep'
+                write(*,'(A)') ' Note for BSKInfo: gb_BSKs(i)%r, de_zfromintpl(gb_BSKs(i)%r), gb_BSKs(i)%length, gb_BSKs(i)%mu'
 		stop
 	endif
 	
