@@ -260,7 +260,7 @@ implicit none
 			vr = sqrt(vx**2+vy**2+vz**2) * costheta
 			zobs = redshift + vr * (1.0_dl+redshift) / const_c 
 			shiftdist = de_get_comovr(zobs) - dist
-			print *, 'r_obs, dist, shiftr = ', de_get_comovr(zobs), dist, shiftdist
+			!print *, 'r_obs, dist, shiftr = ', de_get_comovr(zobs), dist, shiftdist
 			write(shiftstr1,'(e14.7)') shiftdist; shiftstr2=trim(adjustl(shiftstr2))//' '//trim(adjustl(shiftstr1)); 
 			write(6,'(4(e15.7))') vx, vy, vz, vr
 			!shiftrat = de_get_comovr(zobs) / dist
