@@ -269,9 +269,11 @@ contains
 			mass = xyz_mass_array(4,i)
 			rho = rho + mass*w_kernel(r, h)
 			dweight = der_w_kernel(r,h)
-			drhodx = drhodx + mass*(x-xyz_mass_array(1,i)) / r * dweight
-			drhody = drhody + mass*(y-xyz_mass_array(2,i)) / r * dweight
-			drhodz = drhodz + mass*(z-xyz_mass_array(3,i)) / r * dweight
+                        if(r.ne.0.0d0) then
+        			drhodx = drhodx + mass*(x-xyz_mass_array(1,i)) / r * dweight
+	        		drhody = drhody + mass*(y-xyz_mass_array(2,i)) / r * dweight
+		        	drhodz = drhodz + mass*(z-xyz_mass_array(3,i)) / r * dweight
+                        endif
 		enddo
 		if(present(printinfo)) then
 			print *, ' (nb_list0) End'

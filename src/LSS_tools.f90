@@ -497,7 +497,7 @@ contains
 	    	i1 = i - di 
 		i2 = i + di 
 		if(i1 < imin .and. i2 > imax) then
-        		print *, 'ERROR! overflow: imin, imax, 2*di+1 = ', imin, imax, 2*di+1
+        		print *, 'ERROR! overflow: i1, i2, imin, imax, 2*di+1 = ', i1, i2, imin, imax, 2*di+1
         		stop
         	endif
         	if(i1 < imin) then

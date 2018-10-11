@@ -8,17 +8,18 @@ use LSS_chisq
 implicit none
 
 	real(dl) ::omAP,wAP, muav,muer
-	real(dl), allocatable :: drho_mu_data(:), pos_list(:,:)
+	real(dl), allocatable :: drho_mu_data(:), pos_list(:,:), rho_list(:), drho_list(:,:)
 	integer :: numarg, i, n, ixyz
-	character(len=char_len) :: printstr, inputfilename, outputfilename, tmpstr1, tmpstr2
-	logical :: hasweight, printinfo
+	character(len=char_len) :: printstr, inputfilename, outputfilename, tmpstr1, tmpstr2, allinfo_file
+	logical :: hasweight, printinfo, outputallinfo, cen_par 
 	type(chisq_settings) :: cs
 	
 	printstr = 'Usage: EXE -input intpufilename -hasweight hasweight '//&
 		'-bddist bddist -omdft omdft -wdft wdft -omAP omAP -wAP wAP '//&
 		'-printinfo printinfo -usefixmd usefixmd -smnum smnum '//&
-		'-fixmd fixmd -numinx numinx '//&
+		'-fixmd fixmd -numinx numinx -outputallinfo outputallinfo -centered_at_particle cen_par'//&
 		'### Must be fmt of x,y,z, weight! By default only x,y,z '//&
+		'### By default: output results centered at CENTERS OF CELLS; set centered_at_particle to change it '//&
 		'## Keep a distance bddist from boundary, to avoid boundary effect'
 
 	numarg = iargc()
@@ -35,6 +36,8 @@ implicit none
 	gb_use_fixmd = .false.; gb_fixmd = 15.0*2.0 
 	cs%num_in_x = 0
 	omAP =0.26; wAP = -1.0
+        outputallinfo = .false.
+        cen_par = .false.
 	
 	! Important settings
 	gb_minimalr_cut = -1.0e30
@@ -75,6 +78,10 @@ implicit none
 			read(tmpstr2,*) cs%num_in_x
 		elseif(trim(adjustl(tmpstr1)).eq.'-printinfo') then
 			read(tmpstr2,*) printinfo
+		elseif(trim(adjustl(tmpstr1)).eq.'-outputallinfo') then
+			read(tmpstr2,*) outputallinfo
+		elseif(trim(adjustl(tmpstr1)).eq.'-centered_at_particle') then
+			read(tmpstr2,*) cen_par
 		else
 			print *, 'Unkown argument: ', trim(adjustl(tmpstr1))
 			write(*,'(A)') trim(adjustl(printstr))
@@ -101,15 +108,17 @@ implicit none
 	gb_omwstr = 'om'//trim(adjustl(tmpstr1))//'_w'//trim(adjustl(tmpstr2))
 	write(tmpstr1,*) cs%smnum
 	outputfilename = trim(adjustl(outputfilename))//'_'//trim(adjustl(gb_omwstr))//'.muinfo'
+        if(outputallinfo) allinfo_file =trim(adjustl(outputfilename))//'.allinfo'
 
 	print *, '#####################################'
 	write(*,'(A)')   	'  Settings:'
 	write(*,'(A,A)') 	'   inputfilename:  ', trim(adjustl(inputfilename))
-	write(*,'(A,3L)') 	'   hasweigt, printinfo, usefixmd = ', hasweight, printinfo, gb_use_fixmd
+	write(*,'(A,3L)') 	'   hasweigt, printinfo, usefixmd, outputallinfo = ', hasweight, printinfo, gb_use_fixmd
 	write(*,'(A,2i4,2f16.7)')'   gridsize, smnum, fixmd, bddist = ', cs%num_in_x, cs%smnum, gb_fixmd, gb_bddist
 	write(*,'(A,2f16.7)') 	'   omegam, w (dft) = ', real(om_dft), real(w_dft)
 	write(*,'(A,2f16.7)') 	'   omegam, w (AP)  = ', real(omAP), real(wAP)
 	write(*,'(A,A)') 	'   outputfilename  = ', trim(adjustl(outputfilename))
+        if(outputallinfo) write(*,'(A,A)') 	'   allinfo_file    = ', trim(adjustl(allinfo_file))
 	print *, '#####################################'
 	
 	! initialization
@@ -122,9 +131,30 @@ implicit none
 	if(cs%num_in_x.eq.0) cs%num_in_x = dble(gb_numdata)**0.33
 	call do_cell_init(real(cs%num_in_x)+0.0_dl, printinfo)		
 	
-	call grid_rho_drho_list(cs%smnum, printinfo, gb_pos_list, gb_rho_list, gb_drho_list)
+        if(cen_par) then
+                allocate(pos_list(3,gb_numdata), rho_list(gb_numdata), drho_list(3,gb_numdata))
+                pos_list = gb_xyz_list
+                call calc_rho_drho_list(cs%smnum, gb_numdata, printinfo, pos_list, rho_list, drho_list)
+        else
+        	call grid_rho_drho_list(cs%smnum, printinfo, gb_pos_list, gb_rho_list, gb_drho_list)
+        endif
+        if(outputallinfo) then
+	        print *, '  (SanpshotGF) write results to file...'
+                open(unit=200,file=allinfo_file)
+                if(cen_par) then
+                        do i = 1, size(rho_list)
+                                write(200,'(4e15.7)' ) rho_list(i), drho_list(:,i)
+                        enddo
+                else
+                        do i = 1, size(gb_rho_list)
+                                write(200,'(4e15.7)' ) gb_rho_list(i), gb_drho_list(:,i)
+                        enddo
+                endif
+                close(200)
+        endif
+        if(cen_par) goto 999
 	n = size(gb_rho_list); deallocate(gb_rho_list)
-	allocate(pos_list(3,n))
+        allocate(pos_list(3,n))
 	open(unit=100,file=outputfilename)
 	
 	do ixyz = 1, 3
@@ -159,6 +189,7 @@ implicit none
 	write(100,'(A,A)') 	'   outputfilename  = ', trim(adjustl(outputfilename))
 	write(100,'(A,i10)') 	'   #-data  = ', gb_numdata
 	write(100,'(A,i5)') 	'   size-of-grid  = ', cs%num_in_x
+        if(outputallinfo) write(100,'(A,A)') 	'   allinfo_file    = ', trim(adjustl(allinfo_file))
 	write(100,'(A)') '#####################################'
-	print *, ' (SnapshotGF) Done.'
+999	print *, ' (SnapshotGF) Done.'
 end program main

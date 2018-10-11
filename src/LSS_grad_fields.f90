@@ -415,6 +415,145 @@ contains
 		endif
 	end subroutine grid_rho_drho_list
 
+
+  !------------------------------------------
+  ! estimating rho/drho at grid points
+  !------------------------------------------
+	subroutine calc_rho_drho_list(smnum, npar, printinfo, pos_list,  rho_list, drho_list)
+		!Dummy
+		integer, intent(in) :: smnum, npar
+		logical, intent(in) :: printinfo
+		real(dl), intent(in) :: pos_list(3,npar)
+		real(dl), intent(out) ::  rho_list(npar),  drho_list(3,npar)
+		! Local
+		real(dl) :: x,y,z,ra,dec,r,deltaradec, rho,drhox,drhoy,drhoz,max_dist,weirat, &
+			numhasbd, numsmallsmnum, numavg, numsqavg, numranweirej, insphere_numran_avg, &
+			numranweifail1, numranweifail2, sumwei_acpt, sumwei_all, drho,mu
+		integer, parameter :: n_ransmnum = 6, ransmnum(n_ransmnum) = (/10, 20, 50, 100, 200, 300/)
+		integer :: ipar, i,j, ix, iy, iz, n, iscan, n0, n1, n2, fixmdsmnum, erflagint, insphere_numran, percent, &
+			insphere_numran_min, insphere_numran_max, numransmnum(n_ransmnum), num_scan, check_iscan
+		logical ::  erflaglog, tmplogical
+		character(len=char_len) :: tmpstr1, tmpstr2, tmpstr3
+		
+		if(printinfo) then
+			print *, '  (calc_rho_drho_list begins) Estimating rho_list and its gradient...'
+			write(*,'(26x,A,L2,L2)') 'use_fixmd / gb_do_seg_cut = ', gb_use_fixmd, gb_do_seg_cut
+			if(gb_use_fixmd) then
+				write(*,'(26x,A,f10.3)') 'Fixed smoothing length gb_fixmd = ', real(gb_fixmd)
+			else
+				write(*,'(26x,A,i4)') 'Using #-NNB = ', smnum
+				write(*,'(26x,A,f6.3,A,L3)') 'NNB Over-Searching Rat = ', gb_NNBosrat, &
+					'; Do NNB-ReSearch = ', gb_do_NNBReSearch
+			endif
+			if(gb_do_seg_cut)  then
+				write(*,'(26x,A,f10.3)') 'Applying minimal-r cut: ', real(gb_seg_cut_dist)
+				write(*,*) 'ERROR (grid_rho_drho_list): gb_do_seg_cut not supported now!'; stop
+			endif
+			write(*,'(26x,A)') 'Settings of Boundary Correction: '
+			write(*,'(30x,A,4f10.3)') 'bd, bd_rextra, buffer, buffer_rextra = ', &
+				gb_bddist, gb_bddist_rextra, gb_bufferdist, gb_bufferdist_rextra
+		endif
+		
+		n = gb_n_cellx*gb_n_celly*gb_n_cellz
+		write(*,'(25x,A,$)') ' '
+		! n2 counts how many pixels in shell and has no boundary effect (pass has_boundary_effect)
+		numransmnum = 0; num_scan= npar
+		iscan=0; n0=0; n1=0; n2=0; gb_num_NNBSearch=0; gb_num_NNBReSearch = 0;
+		numavg = 0.0; numsqavg = 0.0; 
+		insphere_numran_avg = 0.0; insphere_numran_min = max_insphere_num; insphere_numran_max = -max_insphere_num
+		numsmallsmnum = 0.0; numhasbd = 0.0; numranweirej=0.0; numranweifail1=0.0; numranweifail2=0.0
+		
+		check_iscan = -1
+		
+!		open(unit=98,file='checkiscan.txt') !!! Useful sentence: check where the programe break
+		do ipar = 1, npar
+			iscan = iscan+1
+!			write(98,*) iscan
+			if(iscan.eq.check_iscan) print *, ' (grid_rho_drho_list) Checking iscan: ', iscan, 'Start'
+			if(mod(iscan,(num_scan/10)).eq.0.and.iscan>num_scan/10-10) then
+                                percent = int(iscan/dble(num_scan/10.0)+0.5)*10
+                                write(tmpstr1,*) percent
+                                write(tmpstr2,'(f6.3)') gb_omegam
+                                write(tmpstr3,'(f6.3)') gb_w
+                                write(*,'(A,$)') trim(adjustl(tmpstr1))//'%('//trim(adjustl(tmpstr2))&
+					//','//trim(adjustl(tmpstr3))//')==>'
+                        endif
+                        if(iscan .eq. num_scan) then
+                                write(*,'(A)') 'Finish'
+                        endif
+
+			x=pos_list(1,ipar); y=pos_list(2,ipar); z=pos_list(3,ipar);  
+			r = sqrt(x*x+y*y+z*z)
+!			if(r<gbrmindata.or.r>gbrmaxdata) then
+!				cycle
+!			endif
+			n0=n0+1
+
+			if(iscan.eq.check_iscan) print *, ' (grid_rho_drho_list) Before Compute rho,drho...'
+			! Computing rho / drhos ...
+			if(gb_use_fixmd) then
+				print *, 'Check use_fixmd bd correction carefully! especially check combination 2d&3d!'; stop
+				max_dist = gb_fixmd
+				if(has_boundary_effect(gb_i_datatype, x,y,z,max_dist)) then
+					numhasbd = numhasbd + 1.0
+				!	cycle
+				else
+					call nb_fixmd_list(x,y,z,fixmdsmnum,rho,drhox,drhoy,drhoz,gb_fixmd,erflaglog)
+				endif
+			else
+				if(iscan.eq.check_iscan) print *, iscan, 'Before nb_list0: x,y,z = ', x,y,z
+				if(iscan.eq.check_iscan) call nb_list0(x,y,z,smnum,rho,drhox,drhoy,drhoz,max_dist,erflaglog,.true.)
+				call nb_list0(x,y,z,smnum,rho,drhox,drhoy,drhoz,max_dist,erflaglog)
+				if(iscan.eq.check_iscan) then
+					print *, ' (grid_rho_drho_list) has_boundary_effect...'
+					tmplogical = has_boundary_effect(gb_i_datatype, x,y,z,max_dist,.true.)
+				endif
+				if(has_boundary_effect(gb_i_datatype, x,y,z,max_dist) .or. erflaglog) then
+					numhasbd = numhasbd + 1.0; !cycle
+				endif
+				if(iscan.eq.check_iscan) print *, ' (grid_rho_drho_list) After has_boundary_effect'
+			endif
+			if(iscan.eq.check_iscan) print *, iscan, ' (grid_rho_drho_list) After Compute rho,drho'
+
+
+			n1 = n1+1
+			rho_list(ipar) = rho
+			drho_list(1,ipar) = drhox
+			drho_list(2,ipar) = drhoy
+			drho_list(3,ipar) = drhoz
+			if(iscan.eq.check_iscan) print *, ' (grid_rho_drho_list)  Checking iscan ', iscan, 'End'
+		enddo
+
+		
+		if(printinfo.or.gbtp) then
+			if(gb_do_NNBReSearch) then
+				write(*,'(26x,i7,A,f5.2,A,i7,A,f5.2,A)') int(gb_num_NNBReSearch+0.1), ' (',&
+					gb_num_NNBReSearch/dble(gb_num_NNBSearch)*100.0,&
+					'%) NNB ReSearch conducted; Large osrat Error: ', &
+					gb_num_NNBReSearchEr, '(', gb_num_NNBReSearchEr/dble(gb_num_NNBSearch)*100.0, '%)'
+			endif
+		
+			write(*,'(26x,i7,A,f5.2,A)') int(numhasbd+0.1), ' (',numhasbd/dble(n0)*100.0,&
+					'%) rejected - has_boundary_effect()'
+			write(*,'(26x,i7,A,f5.2,A)') int(numranweifail2+0.1), ' (',numranweifail2/dble(n0)*100.0,&
+					'%) rejected - random weight estimation failure 2'
+			write(*,'(26x,i7,A,f5.2,A)') int(numranweifail1+0.1), ' (',numranweifail1/dble(n0)*100.0,&
+					'%) rejected - random weight estimation failure 1'
+			write(*,'(26x,i7,A,f5.2,A,f7.2,i3,i6)') int(numranweirej+0.1), ' (',numranweirej/dble(n0)*100.0,&
+					'%) rejected - weirat < weitol; mean/min/max-# of insphere random  = ', &
+						insphere_numran_avg, int(insphere_numran_min+0.5), int(insphere_numran_max+0.5)
+			do i = 1, n_ransmnum
+				write(*,'(30x,i7,A,f5.2,A,i5)') numransmnum(i), '(', numransmnum(i)/dble(n1)*100.0, &
+					'%) pixels has #-ran smaller than ', ransmnum(i)
+			enddo
+		endif
+
+
+		if(printinfo) then
+			print *, '  (calc_rho_drho_list done)'
+		endif
+	end subroutine calc_rho_drho_list
+
   !------------------------------------------
   ! Mark the pixels that shall be dropped
   !------------------------------------------
