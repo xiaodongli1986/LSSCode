@@ -1812,8 +1812,8 @@ contains
   !---------------------------------------------------------------  	
 	subroutine init_RDSR()
 		character(len=char_len) :: readinfile = &
-			"/data/DEC_vs_RAspan-to-DECspan.txt"
-			!"/home/xiaodongli/software/LSSCode/data/DEC_vs_RAspan-to-DECspan.txt"
+			!"/data/DEC_vs_RAspan-to-DECspan.txt"
+			"/home/xiaodongli/software/LSSCode/data/DEC_vs_RAspan-to-DECspan.txt"
 		integer :: i
 
                 character(len=1000) :: tmppath
@@ -1824,7 +1824,7 @@ contains
                 close(100)
                 call system('rm LSSCode_tmpfile.dat')
 
-                readinfile = trim(adjustl(tmppath))//"/data/DEC_vs_RAspan-to-DECspan.txt"
+                readinfile = trim(adjustl(tmppath))//"/home/xiaodongli/software/LSSCode/data/DEC_vs_RAspan-to-DECspan.txt"
                 !print *, readinfile
 
 

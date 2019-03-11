@@ -5,7 +5,7 @@ use LSS_cosmo_funs
 
 implicit none
 
-	integer :: i, skiprow, maxcol
+	integer :: i, skiprow, maxcol, xcol, ycol, zcol
 	real(dl) :: om,w, ra,dec,x,y,z,r,redshift, tmp(10000)
 	integer(8) :: numarg, nlines
 	character(len=char_len) :: inputfile, outputfile, printstr, tmpstr1, tmpstr2
@@ -17,7 +17,7 @@ implicit none
 		'### fmt of output: ra, dec, z, *** ### Converting the ra, dec, z to x, y, z; based on some cosmology'
 
 	! Default values
-	om = 0.26; w = -1.0; skiprow = 0; maxcol = 3
+	om = 0.26; w = -1.0; skiprow = 0; maxcol = 3; xcol = 1; ycol=2; zcol = 3;
 	inputfile = 'NONE'
 	outputfile = 'NONE'
 	
@@ -45,6 +45,12 @@ implicit none
 			read(tmpstr2,*) maxcol
 		elseif(trim(adjustl(tmpstr1)).eq.'-addw1') then
 			read(tmpstr2,*) addw1
+		elseif(trim(adjustl(tmpstr1)).eq.'-xcol') then
+			read(tmpstr2,*) xcol
+		elseif(trim(adjustl(tmpstr1)).eq.'-ycol') then
+			read(tmpstr2,*) ycol
+		elseif(trim(adjustl(tmpstr1)).eq.'-zcol') then
+			read(tmpstr2,*) zcol
 		else
 			print *, 'Unkown argument: ', trim(adjustl(tmpstr1))
 			write(*,'(A)') trim(adjustl(printstr))
@@ -56,6 +62,9 @@ implicit none
 		print *, 'maxcol larger than 10000; increase size of tmp!: ', maxcol
 		stop
 	endif
+        maxcol = max(maxcol,xcol);
+        maxcol = max(maxcol,ycol);
+        maxcol = max(maxcol,zcol);
 
 	! intput cosmology
 	call cosmo_funs_init(.true.)
@@ -76,7 +85,7 @@ implicit none
 	do while(.true.)
 		read(1,*,end=101) tmp(1:maxcol)
 		nlines = nlines + 1
-		x=tmp(1); y=tmp(2); z=tmp(3)
+		x=tmp(xcol); y=tmp(ycol); z=tmp(zcol)
 		call xyz_to_radecr(x,y,z,ra,dec,r)
                 redshift = de_zfromintpl(r)
 		if(.not.addw1) then

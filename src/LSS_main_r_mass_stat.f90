@@ -12,7 +12,7 @@ implicit none
 	integer(8) :: nlines, nlines_degrade, numoutrange, numbigmass, numdegrade, num,num1,num2
 	integer(8), allocatable :: binnednum(:,:)
 	logical :: logmass, dodegrade
-	character(len=char_len) :: inputfilename, outputfilename, outputfilemassedges, outputfilename1, outputfilename2, printstr, tmpstr1,tmpstr2
+	character(len=char_len) :: inputfilename, outputfilename, outputfilemassedges, outputfilename1, outputfilename2, printstr, tmpstr1,tmpstr2, degraded_filename
 	
 	print *
 	printstr = "Usage: EXE -input intpufilename -rmin rmin "//&
@@ -20,7 +20,7 @@ implicit none
 		'-logmass logmass -numrbin numrbin -nummassbin nummassbin '//&
 		'-skiprow skiprow'//&
 		'-xcol xcol -ycol ycol -zcol zcol -masscol masscol '//&
-		'-dodegrade dodegrade -numdegrade numdegrade -frac_surface frac_surface'//&
+		'-dodegrade dodegrade -degradedfile degraded_filename -numdegrade numdegrade -frac_surface frac_surface'//&
 		'### dodegrade will choose a suitable masscut and '//&
 		'degrade the data to a subsample with number numdegrade'
 
@@ -31,6 +31,7 @@ implicit none
 	numrbin = 1; nummassbin = 100
 	frac_surface=1.0
         skiprow=0
+        degraded_filename = ''
 	
 	numarg = iargc()
 	if(numarg.le.1) then
@@ -72,6 +73,8 @@ implicit none
 			read(tmpstr2,*) dodegrade
 		elseif(trim(adjustl(tmpstr1)).eq.'-numdegrade') then
 			read(tmpstr2,*) numdegrade
+		elseif(trim(adjustl(tmpstr1)).eq.'-degradedfile') then
+			read(tmpstr2,*) degraded_filename
 		elseif(trim(adjustl(tmpstr1)).eq.'-frac_surface') then
 			read(tmpstr2,*) frac_surface
 		else
@@ -212,8 +215,14 @@ implicit none
 	
 	if(.not.dodegrade) stop
 
-	outputfilename1 = trim(adjustl(inputfilename))//'.degraded'
-	outputfilename2 = trim(adjustl(inputfilename))//'.degraded.info'	
+        if(trim(adjustl(degraded_filename)) .eq. '') then
+        	outputfilename1 = trim(adjustl(inputfilename))//'.degraded'
+        	outputfilename2 = trim(adjustl(inputfilename))//'.degraded.info'	
+        else
+        	outputfilename1 = trim(adjustl(degraded_filename))
+        	outputfilename2 = trim(adjustl(outputfilename1))//'.info'	
+        endif
+
 	if(numdegrade.gt.nlines) then
 		print *, 'numdegrade larger than nline: no need to do degrade! Programme will just copy file!'
 		open(unit=3,file=outputfilename2)
