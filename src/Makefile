@@ -177,8 +177,8 @@ $(EXE39): LSS_cosmo_funs.o LSS_main_CosmoConvert_CPL.o
 	$(F90C) -o $(EXE39) LSS_tools.o LSS_cosmo_funs.o  LSS_main_CosmoConvert_CPL.o
 $(EXE40): LSS_cosmo_funs.o LSS_main_XYZWToRaDecZW.o
 	$(F90C) -o $(EXE40) LSS_tools.o LSS_cosmo_funs.o  LSS_main_XYZWToRaDecZW.o
-$(EXE41): LSS_cosmo_funs.o LSS_main_rho_knn_periodic_box.o
-	$(F90C) -o $(EXE41) LSS_tools.o LSS_cosmo_funs.o  LSS_main_rho_knn_periodic_box.o
+$(EXE41):  $(OBJS) LSS_main_rho_knn_periodic_box.o
+	$(F90C) -o $(EXE41) $(OBJS)  LSS_main_rho_knn_periodic_box.o
 amtb: amtb
 
 
