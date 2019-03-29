@@ -69,6 +69,7 @@ implicit none
         real(dl) :: margin, boxsize, tmpA(1000), x,y,z, ps1(3,26), ps2(3,26), rho,drhox,drhoy,drhoz,max_dist
         real(dl), allocatable :: par2s(:,:)
         logical :: printinfo =.True., erflag
+        logical, allocatable :: compute_list(:)
 	
 	printstr = " Computing density around each particle. Using k nearest neighbours. Periodic Bounday Box. \\n"//&
                 "      Usage::: EXE -inputfile inputfile -xcol 1 -ycol 2 -zcol 3 -margin 30 -numNB 30 -outputfile yourfilename -boxsize 1024  \\n"//&
@@ -140,6 +141,28 @@ implicit none
         close(90812743); close(981)
         write(*,'(A,i10,A,i10,A)') ' (rho_knn_periodic_box) processing ', npar1, ' particles; ', npar2, ' within box+margin.'
 
+        i=1; 
+        allocate(compute_list(npar2)); compute_list = .false.
+        open(file=inputfile,unit=90812743)
+        open(file=outputfile,unit=981)
+        do while(.true.)
+                read(90812743, *, end=101) tmpA(1:maxcol)
+                x = tmpA(xcol); y = tmpA(ycol); z= tmpA(zcol); npar1 = npar1+1;
+                call periodic_shift_ps(x,y,z, boxsize, ps1); compute_list(i)=.true.; i=i+1;
+                call ps_within_margin(ps1, 26, ps2, n2, boxsize, margin); i=i+n2; 
+                write(981,'(3e15.7)') x,y,z
+                do j = 1, n2
+                        write(981,'(3e15.7)') ps2(:,j)
+                enddo
+                cycle
+101             exit
+        enddo
+        close(90812743); close(981)
+
+
+
+
+
         ! expand the data to have a margin
         !allocate(par2s(3,npar2))
         !open(file=inputfile,unit=90812743)
@@ -184,7 +207,8 @@ implicit none
                         write(*,'(i2,A,$)') int(real(i)/real(gb_numdata)*100), '%==>'
                 endif
                 x = gb_xyz_list(1,i); y = gb_xyz_list(2,i); z = gb_xyz_list(3,i)
-                if(0.<x .and. x<boxsize .and. 0.<y .and. y<boxsize .and. 0.<z .and. z<boxsize) then
+                !if(0.<x .and. x<boxsize .and. 0.<y .and. y<boxsize .and. 0.<z .and. z<boxsize) then
+                if(compute_list(i)) then
                         !call NNBExactSearch_data(x,y,z, numNB,selected_list,erflag)
                         call nb_list0(x,y,z,numNB,rho,drhox,drhoy,drhoz,max_dist,erflag)
                         !print *, rho, drhox, drhoy, drhoz, max_dist
