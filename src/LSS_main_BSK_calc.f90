@@ -32,7 +32,18 @@ use LSS_BSK
 			'-printinfo printinfo -numNNB numNNB -minimalrcut minimalrcut '//&
 			'-maximalrcut maximalrcut -nglcrosscheck do_nglcrosscheck '//&
 			'-ngldir ngldir -numdrop numdrop -dropstep dropstep'
+                write(*,'(A)') 'omdft, wdft 样本的真实宇宙学，你的 xyz 对应的宇宙学'
+                write(*,'(A)') 'om w 可以把数据转到其他宇宙学背景下（相当于加AP），如果 no AP 就跟 omdft wdft 一样'
+                write(*,'(A)') 'inputfilename 输入数据文件'
+                write(*,'(A)') 'outputfilename 应当可以不给，按照这个名字输出一个文件夹，里面有各种结果'
+                write(*,'(A)') 'beta 取3比较中庸'
+                write(*,'(A)') 'numNNB 越大搜索范围越大越精确但是会慢很多，取到结果不变就可以'
+                write(*,'(A)') 'minimalrct 除非你要截取一个 shell，设成0'
+                write(*,'(A)') 'maximalrcut 除非你要截取一个 shell，设成很大比如 1e30'
+                write(*,'(A)') 'nglcrosscheck False'
+                write(*,'(A)') 'numdrop dropstep 都不用管'
                 write(*,'(A)') ' Note for BSKInfo: gb_BSKs(i)%r, de_zfromintpl(gb_BSKs(i)%r), gb_BSKs(i)%length, gb_BSKs(i)%mu'
+                write(*,'(A)')
 		stop
 	endif
 	

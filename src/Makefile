@@ -43,7 +43,10 @@ EXE41 = ../bin/LSS_rho_knn_periodic_box
 OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o
 #F90C = ifort -heap-arrays -diag-disable 6009 #gfortran #mpif90 -heap-arrays
 #OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o #LSS_kdtree3pcf.o kdtree2.o
-F90C = mpif90 -heap-arrays #gfortran #mpif90 -heap-arrays
+#F90C = mpif90 -heap-arrays #gfortran #mpif90 -heap-arrays
+F90C = ifort -heap-arrays #gfortran #mpif90 -heap-arrays
+F90Cnompi = ifort -heap-arrays
+
 #F90C = ifort -heap-arrays
 #F90C = gfortran
 #F90C = /home/xiaodongli/software/anaconda/bin/mpif90
