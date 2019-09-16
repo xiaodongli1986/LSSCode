@@ -10,6 +10,7 @@ implicit none
         character(len=char_len), allocatable :: files(:)
         integer :: i, nfile, ifile, iline, iwriteline
         real(dl) :: randrat = 0.001, x
+        logical :: use_filelist = .true.
 
         ! mpi variables
 	integer :: ierr, nproc, myid
@@ -20,7 +21,8 @@ implicit none
         call random_seed()
         write(*,*) 'myid, nproc = ', myid, nproc
 	
-        printstr = "Randomly select a part of the input file. Usage: LSS_mpi_random_select -inputfile inputfilename -randrat your_rat -suffixstr your_suffix"
+        printstr = "Randomly select a part of the input file. You must have the files stored in file:  (by default LSS_mpi_random_select.filelist)    Usage: LSS_mpi_random_select -inputfile inputfilename -randrat your_rat -suffixstr your_suffix -use_filelist True"
+        filelist = 'LSS_mpi_random_select.filelist'
 	if(iargc().le.1) then
 		print *, printstr
 		stop
@@ -33,9 +35,11 @@ implicit none
 		if(trim(adjustl(tmpstr1)).eq."-inputfile") then
 			read(tmpstr2,"(A)") inputfile
                 elseif(trim(adjustl(tmpstr1)).eq."-randrat ") then
-			read(tmpstr2,"(A)") randrat
+			read(tmpstr2,*) randrat
 		elseif(trim(adjustl(tmpstr1)).eq."-suffixstr") then
 			read(tmpstr2,"(A)") suffixstr
+		elseif(trim(adjustl(tmpstr1)).eq."-use_filelist") then
+			read(tmpstr2,*) use_filelist
 		else
 			print *, "Unkown argument: ", trim(adjustl(tmpstr1))
 			write(*,"(A)") trim(adjustl(printstr))
@@ -52,23 +56,26 @@ implicit none
         write(*,'(A,f14.7)') 'radrat    = ', randrat
         write(*,'(A,A)')'suffixstr = ', trim(adjustl(suffixstr))
 
-        filelist = 'LSS_mpi_random_select.filelist'
+        if(.not.use_filelist) then
+                call system('ls '//trim(adjustl(inputfile))//' > '//trim(adjustl(filelist)))
+	        call mpi_barrier(mpi_comm_world,ierr)
+        else
+                filelist = trim(adjustl(inputfile))
+        endif
         write(*,'(A,A)') 'Files to be processed stored in: ', trim(adjustl(filelist))
 
-        call system('ls '//trim(adjustl(inputfile))//' > '//trim(adjustl(filelist)))
-
-        open(file = filelist, action='read', unit = 10000)
+        open(file = trim(adjustl(filelist)), action='read', unit = 10000)
         nfile = 0
         do while(.true.)
-                read(10000,*,end=100) tmpstr1
+                read(10000,'(A)',end=100) tmpstr1
                 nfile = nfile + 1
         enddo
 100     close(10000)
 
         allocate(files(nfile))
-        open(file = filelist, action='read', unit = 10000)
+        open(file = trim(adjustl(filelist)), action='read', unit = 10000)
         do ifile = 1, nfile
-                read(10000,*,end=100) files(ifile)
+                read(10000,'(A)') files(ifile)
         enddo
         close(10000)
 
@@ -77,8 +84,8 @@ implicit none
                 file1 = files(ifile)
                 file2 = trim(adjustl(file1))//trim(adjustl(suffixstr))
                 write(*, '(A,i4,i4,A,A)')'myid, nproc = ', myid, nproc, '; processing ', trim(adjustl(file1))
-                open(file = file1, action='read', unit = 12903480)
-                open(file = file2, action='write', unit = 12903481)
+                open(file = trim(adjustl(file1)), action='read', unit = 12903480)
+                open(file = trim(adjustl(file2)), action='write', unit = 12903481)
                 iline = 0; iwriteline = 0
                 do while(.true.)
                         read(12903480,'(A)',end=101) tmpstr1
