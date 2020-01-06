@@ -616,9 +616,9 @@ contains
 			write(*,'(23x,A,f8.3,A,f8.3,A,f8.3)') 'Fiducial Cosmology: Omegam/w/h = ',&
 				 gb_omegam,' /',gb_w,' /',gb_h
 			write(*,'(23x,A,A,A)') 'Catalogue = "', trim(adjustl(gb_catalogue_name)), '"'
-			write(*,'(23x,A,1f12.3)') '   Effective-Area: ', gb_Seff
-			write(*,'(23x,A,2f12.3,A)') '   Redshift range: (',gb_dataredcut_min,gb_dataredcut_max, ')'
-			write(*,'(23x,A,2f12.3,A)') '   Distance range: (', gb_minimalr_cut, gb_maximalr_cut, ')'
+			write(*,'(23x,A,1f18.3)') '   Effective-Area: ', gb_Seff
+			write(*,'(23x,A,2f18.3,A)') '   Redshift range: (',gb_dataredcut_min,gb_dataredcut_max, ')'
+			write(*,'(23x,A,2f18.3,A)') '   Distance range: (', gb_minimalr_cut, gb_maximalr_cut, ')'
 		endif
 		call cosmo_funs_init(printinfo)
 		call de_calc_comovr()

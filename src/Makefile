@@ -44,6 +44,7 @@ EXE42 = ../bin/LSS_mpi_random_select
 EXE43 = ../bin/LSS_add_rsd_lightcone
 EXE44 = ../bin/LSS_mpi_add1
 EXE45 = ../bin/LSS_mpi_lightcone_boxsplit
+EXE46 = ../bin/LSS_rho_knn_rectangular_box
 OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o
 #F90C = ifort -heap-arrays -diag-disable 6009 #gfortran #mpif90 -heap-arrays
 #OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o #LSS_kdtree3pcf.o kdtree2.o
@@ -58,8 +59,8 @@ F90Cnompi = ifort -heap-arrays
 F90FLAGS = 
 
 default: $(EXE2)
-nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41)          $(EXE43)                  
-all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45)
+nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41)          $(EXE43)                   $(EXE46)
+all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46)
 
 test: $(EXE0)
 bsk: $(EXE2)
@@ -105,6 +106,7 @@ mpi_random_select: $(EXE42)
 add_rsd_lightcone: $(EXE43)
 mpi_add1: $(EXE44)
 mpi_lightcone_boxsplit: $(EXE45)
+rho_knn_rectangular_box: $(EXE46)
 AMTB: AMTB
 
 $(EXE0): $(OBJS) LSS_main_test.o
@@ -199,6 +201,8 @@ $(EXE44): LSS_cosmo_funs.o LSS_main_mpi_add1.o
 	$(F90C) -o $(EXE44) LSS_tools.o LSS_cosmo_funs.o  LSS_main_mpi_add1.o
 $(EXE45): LSS_cosmo_funs.o LSS_main_mpi_lightcone_boxsplit.o
 	$(F90C) -o $(EXE45) LSS_tools.o LSS_cosmo_funs.o  LSS_main_mpi_lightcone_boxsplit.o
+$(EXE46): LSS_cosmo_funs.o LSS_main_rho_knn_rectangular_box.o
+	$(F90C) -o $(EXE46) $(OBJS)  LSS_main_rho_knn_rectangular_box.o
 amtb: amtb
 
 
@@ -257,6 +261,7 @@ LSS_main_mpi_random_select: LSS_cosmo_funs.o
 LSS_main_add_rsd_lightcone: LSS_cosmo_funs.o
 LSS_main_mpi_add1: LSS_cosmo_funs.o
 LSS_main_mpi_lightcone_boxsplit: LSS_cosmo_funs.o
+LSS_main_rho_knn_rectangular_box: LSS_cosmo_funs.o
 GYPS: GYPS
 #LSS_main.o: LSS_settings_init.o
 #LSS_main.o: LSS_tools.o
@@ -268,4 +273,4 @@ GYPS: GYPS
 	$(F90C) -c $< -o $@
 
 clean :
-	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45)
+	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46)

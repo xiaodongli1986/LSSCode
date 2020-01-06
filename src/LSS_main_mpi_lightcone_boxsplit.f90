@@ -86,23 +86,24 @@ implicit none
                write(tmpstr2, *) ibox
                outputfiles(ibox) = trim(adjustl(outputname))//trim(adjustl(suffix))//'.ibox'//trim(adjustl(tmpstr2))//'.iproc'//trim(adjustl(tmpstr3))
                print *, trim(adjustl(outputfiles(ibox)))
-               open(unit=ibox, file = trim(adjustl(outputfiles(ibox))), action='write')
+               open(unit=ibox+200000, file = trim(adjustl(outputfiles(ibox))), action='write')
         enddo
  
 
         do ifile = iproc, nfile, nproc
                 print *, 'opening ', trim(adjustl(inputfiles(ifile))), ' for read...'
-                open(unit=nbox*nbox*nbox+1, file=trim(adjustl(inputfiles(ifile))), action='read')
+                open(unit=nbox*nbox*nbox+100000, file=trim(adjustl(inputfiles(ifile))), action='read')
+                print *, 'file opened...'
                 do while (.true.)
-                        read(nbox*nbox*nbox+1, '(A)', end=100) tmpstr1
+                        read(nbox*nbox*nbox+100000, '(A)', end=100) tmpstr1
                         if(add1) tmpstr1 = trim(adjustl(tmpstr1))//' '//'1'
                         read(tmpstr1, *) x,y,z
-                        ixs(1) = int((x-overlap_distance/2.) / ((xyzmax-xyzmin)/float(nbox))) +1 
-                        ixs(2) = int((x+overlap_distance/2.) / ((xyzmax-xyzmin)/float(nbox))) +1
-                        iys(1) = int((y-overlap_distance/2.) / ((xyzmax-xyzmin)/float(nbox))) +1
-                        iys(2) = int((y+overlap_distance/2.) / ((xyzmax-xyzmin)/float(nbox))) +1
-                        izs(1) = int((z-overlap_distance/2.) / ((xyzmax-xyzmin)/float(nbox))) +1
-                        izs(2) = int((z+overlap_distance/2.) / ((xyzmax-xyzmin)/float(nbox))) +1
+                        ixs(1) = int((x-overlap_distance/2.-xyzmin) / ((xyzmax-xyzmin)/float(nbox))) +1 
+                        ixs(2) = int((x+overlap_distance/2.-xyzmin) / ((xyzmax-xyzmin)/float(nbox))) +1
+                        iys(1) = int((y-overlap_distance/2.-xyzmin) / ((xyzmax-xyzmin)/float(nbox))) +1
+                        iys(2) = int((y+overlap_distance/2.-xyzmin) / ((xyzmax-xyzmin)/float(nbox))) +1
+                        izs(1) = int((z-overlap_distance/2.-xyzmin) / ((xyzmax-xyzmin)/float(nbox))) +1
+                        izs(2) = int((z+overlap_distance/2.-xyzmin) / ((xyzmax-xyzmin)/float(nbox))) +1
                         ixs(1) = max(ixs(1),1); ixs(2) = min(ixs(2),nbox)
                         iys(1) = max(iys(1),1); iys(2) = min(iys(2),nbox)
                         izs(1) = max(izs(1),1); izs(2) = min(izs(2),nbox)
@@ -116,7 +117,7 @@ implicit none
                                 ix = ixs(i1)
                                 iy = iys(i2)
                                 iz = izs(i3)
-                                iwrite = (ix-1)*nbox*nbox + (iy-1)*nbox + iz
+                                iwrite = (ix-1)*nbox*nbox + (iy-1)*nbox + iz + 200000
                                 write(iwrite, '(A)') trim(adjustl(tmpstr1))
                         enddo
                         enddo
@@ -124,7 +125,10 @@ implicit none
                         cycle
 100                     exit
                 enddo
-                close(12)
+                close(nbox*nbox*nbox+100000)
+        enddo
+        do ibox = 1, nbox*nbox*nbox
+               close(ibox + 200000)
         enddo
 
         
