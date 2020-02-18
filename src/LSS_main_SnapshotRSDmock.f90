@@ -14,13 +14,13 @@ implicit none
 	character(len=char_len) :: printstr, inputfilename, outputname, outputfilenamex,outputfilenamey,outputfilenamez,&
 		outputfilenamer,outputfilenameinfo, tmpstr1,tmpstr2, suffix, outputfilenameshifts, outputfilenamevs
 	character(len=10000) :: shiftstr1, shiftstr2
-	logical :: shiftx,shifty,shiftz,shiftr, dovoleff
+	logical :: shiftx,shifty,shiftz,shiftr, dovoleff, add1w
 	
 	printstr = 'Usage: EXE -input intpufilename -xyzmin xyzmin '//&
 		'-xyzmax xyzmax -xcol xcol -ycol ycol -zcol zcol '//&
 		'-vxcol vxcol -vycol vycol -vzcol vzcol -redshift redshift '//&
 		'-omegam omegam -w w -shiftx shiftx -shifty shifty -shiftz shiftz -shiftr shiftr'//&
-		'-skiprow skiprow -suffix suffix -dovoleff dovoleff '//&
+		'-skiprow skiprow -suffix suffix -dovoleff dovoleff -add1w add1w '//&
 		'### xyzmin/xyzmax used to do periodical boundary '//&
 		'condition (shift inside to box if shifted outside by RSD); '//&
 		'please tell cosmology of the simulation, redshift of the snapshot; '//&
@@ -34,6 +34,7 @@ implicit none
 	omegam = 0.26; w = -1.0; redshift = 0.0
 	suffix = ''
 	dovoleff = .false.
+        add1w = .true.
 	
 	numarg = iargc()
 	if(numarg.le.1) then
@@ -83,6 +84,8 @@ implicit none
 			read(tmpstr2,*) suffix
 		elseif(trim(adjustl(tmpstr1)).eq.'-dovoleff') then
 			read(tmpstr2,*) dovoleff
+		elseif(trim(adjustl(tmpstr1)).eq.'-add1w') then
+			read(tmpstr2,*) add1w
 		else
 			print *, 'Unkown argument: ', trim(adjustl(tmpstr1))
 			write(*,'(A)') trim(adjustl(printstr))
@@ -148,6 +151,7 @@ implicit none
 	write(*,'(A,A)') 	'   inputfilename:  ', trim(adjustl(inputfilename))
 	write(*,'(A,2f16.7)')   '   bounary of box = ', xyzmin, xyzmax
 	write(*,'(A,4L2)') 	'   RSD shift at x,y,z,r = ', shiftx, shifty, shiftz, shiftr
+	write(*,'(A,L2)') 	'   Add weight-1 column = ', add1w
 	write(*,'(A,4f16.7)') 	'   omegam, w, redshift, comov_r(redshift) = ', real(omegam), real(w), real(redshift), real(dist)
 	write(*,'(A,6i3)')  	'   cols of x,y,z,vx,vy,vz: ', xcol,ycol,zcol,vxcol,vycol,vzcol
 	write(*,'(A,i5)')	'   skip rows ', skiprow
@@ -157,6 +161,7 @@ implicit none
 	write(100,'(A,A)') 	'   inputfilename:  ', trim(adjustl(inputfilename))
 	write(100,'(A,2f16.7)')	'   bounary of box = ', xyzmin, xyzmax
 	write(100,'(A,4L2)') 	'   RSD shift at x,y,z,r = ', shiftx, shifty, shiftz, shiftr
+	write(100,'(A,L2)') 	'   Add weight-1 column = ', add1w
 	write(100,'(A,4f16.7)') '   omegam, w, redshift, comov_r(redshift) = ', real(omegam), real(w), real(redshift), real(dist)
 	write(100,'(A,6i3)')  	'   cols of x,y,z,vx,vy,vz: ', xcol,ycol,zcol,vxcol,vycol,vzcol
 	write(100,'(A,f10.5)')	'   rescalefac ', rescalefac
@@ -223,7 +228,12 @@ implicit none
 				shiftedcord = shiftedcord - dxyz
 				numshiftback = numshiftback+1
 			endif
-			write(10,'(3e15.7)') shiftedcord, y, z
+                        if (.not. add1w) then
+			        write(10,'(3e15.7)') shiftedcord, y, z
+                        else
+			        write(10,'(3e15.7," 1")') shiftedcord, y, z
+                        endif
+
 		endif
 		if(shifty) then
 			zobs = redshift + vy * (1.0_dl+redshift) / const_c 
@@ -237,7 +247,11 @@ implicit none
 				shiftedcord = shiftedcord - dxyz
 				numshiftback = numshiftback+1
 			endif
-			write(20,'(3e15.7)') x, shiftedcord, z
+                        if (.not. add1w) then
+			        write(20,'(3e15.7)') x, shiftedcord, z
+                        else
+			        write(20,'(3e15.7," 1")') x, shiftedcord, z
+                        endif
 		endif
 		if(shiftz) then
 			zobs = redshift + vz * (1.0_dl+redshift) / const_c 
@@ -251,7 +265,12 @@ implicit none
 				shiftedcord = shiftedcord - dxyz
 				numshiftback = numshiftback+1
 			endif
-			write(30,'(3e15.7)') x, y, shiftedcord
+                        if (.not. add1w) then
+			        write(30,'(3e15.7)') x, y, shiftedcord
+                        else
+			        write(30,'(3e15.7," 1")') x, y, shiftedcord
+                        endif
+
 		endif
 		if(shiftr) then
 			!print *, 'velocity at z direction is really larger than velocity at a single direction... please check it!'; stop
@@ -295,8 +314,12 @@ implicit none
 				numshiftback = numshiftback+1
 			endif
 			z = shiftedcord
-
-			write(40,'(3e15.7)') x, y, z
+                        
+                        if (.not. add1w) then
+			        write(40,'(3e15.7)') x, y, z
+                        else
+			        write(40,'(3e15.7," 1")') x, y, z
+                        endif
 		endif
 		write(5,*) trim(adjustl(shiftstr2))
 		cycle

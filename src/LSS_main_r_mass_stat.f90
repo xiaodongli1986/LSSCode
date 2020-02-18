@@ -12,7 +12,7 @@ implicit none
 	integer(8) :: nlines, nlines_degrade, numoutrange, numbigmass, numdegrade, num,num1,num2
 	integer(8), allocatable :: binnednum(:,:)
 	logical :: logmass, dodegrade
-	character(len=char_len) :: inputfilename, outputfilename, outputfilemassedges, outputfilename1, outputfilename2, printstr, tmpstr1,tmpstr2, degraded_filename
+	character(len=2000) :: inputfilename, outputfilename, outputfilemassedges, outputfilename1, outputfilename2, printstr, tmpstr1,tmpstr2, degraded_filename
 	
 	print *
 	printstr = "Usage: EXE -input intpufilename -rmin rmin "//&
@@ -74,7 +74,7 @@ implicit none
 		elseif(trim(adjustl(tmpstr1)).eq.'-numdegrade') then
 			read(tmpstr2,*) numdegrade
 		elseif(trim(adjustl(tmpstr1)).eq.'-degradedfile') then
-			read(tmpstr2,*) degraded_filename
+			read(tmpstr2,'(A)') degraded_filename
 		elseif(trim(adjustl(tmpstr1)).eq.'-frac_surface') then
 			read(tmpstr2,*) frac_surface
 		else
