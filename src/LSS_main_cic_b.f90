@@ -1,4 +1,4 @@
-module cic
+module cic_nuisance
 
 use LSS_constants_types
 implicit none
@@ -34,11 +34,11 @@ contains
 !  }
 !}
 
-end module cic
+end module cic_nuisance
 
 program main_cic
 
-use cic
+use cic_nuisance
 
 implicit none
 
