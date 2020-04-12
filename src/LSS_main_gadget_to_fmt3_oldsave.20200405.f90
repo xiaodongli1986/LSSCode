@@ -25,11 +25,11 @@ use gadget_to_fmt3_tools
 implicit none
 
 	character(len=char_len) :: tmpstr1, tmpstr2, inputfile, outputname, printstr, inputfiles(10000)
-        integer :: i,j,k,  ifile, nfile,  block1, block2, blockg,ntotal, nnow, numarg, chbk, nparttotal, n1,n2, ng,noutput
+        integer :: i,j,k,  ifile, nfile,  block1, block2, ntotal, nnow, numarg, chbk, nparttotal, n1,n2, noutput
         real :: x,y,z,xyzmin, xyzmax, xyz_rescale,  xcut_min, xcut_max, ycut_min, ycut_max, zcut_min, zcut_max
-        real, allocatable::  xyzvs(:,:), xyzvsg(:,:)
-        integer, allocatable :: is(:), ids(:)
-        logical :: do_xcut1, do_ycut1, do_zcut1, do_xcut2, do_ycut2, do_zcut2, write_an_ascii_copy =.false., write_a_gadget_copy =.false., just_output_head = .false., print_all_head = .false.
+        real, allocatable::  xyzvs(:,:)
+        integer, allocatable :: is(:)
+        logical :: do_xcut1, do_ycut1, do_zcut1, do_xcut2, do_ycut2, do_zcut2, write_an_ascii_copy =.false., just_output_head = .false., print_all_head = .false.
         double precision :: tmpdoubles(64), nonzeromass=0., randrat = 10., randx
 
         type head
@@ -44,7 +44,7 @@ implicit none
         type(head) :: headinfo
 
 	
-	printstr = "Usage: LSS_gadget_to_fmt3 -input inputfile -output outputname -xyz_rescale xyz_rescale -randrat the_rate_you_want_to_output -xcut_min xcut_min -xcut_max xcut_max -ycut_min ycut_min -ycut_max ycut_max -zcut_min zcut_min -zcut_max zcut_max -output_an_ascii_copy/write_an_ascii_copy T/F -write_a_gadget_copy T/F -just_output_head F -print_all_head #### Example: LSS_gadget_to_fmt3 -input snp04000e.\?  -xyz_rescale 0.001 -xyzcut_min 0 -xyzcut_max 100 -write_an_ascii_copy F  ### This is format of l-picola unformatted file; if converting to fmt3, redshift set as -1 (means that there is no redshift; it is a light cone!); we may need to write LSS_fmt4_to_gadget for rockstar halo finder..."
+	printstr = "Usage: LSS_gadget_to_fmt3 -input inputfile -output outputname -xyz_rescale xyz_rescale -randrat the_rate_you_want_to_output -xcut_min xcut_min -xcut_max xcut_max -ycut_min ycut_min -ycut_max ycut_max -zcut_min zcut_min -zcut_max zcut_max -output_an_ascii_copy/write_an_ascii_copy T/F  -just_output_head F -print_all_head #### Example: LSS_gadget_to_fmt3 -input snp04000e.\?  -xyz_rescale 0.001 -xyzcut_min 0 -xyzcut_max 100 -write_an_ascii_copy F  ### This is format of l-picola unformatted file; if converting to fmt3, redshift set as -1 (means that there is no redshift; it is a light cone!); we may need to write LSS_fmt4_to_gadget for rockstar halo finder..."
         numarg = iargc()
 	if(numarg.le.1) then
 		write(*,'(A)') printstr
@@ -81,8 +81,6 @@ implicit none
                         read(tmpstr2,*) randrat
 		elseif(trim(adjustl(tmpstr1)).eq.'-write_an_ascii_copy' .or. trim(adjustl(tmpstr1)).eq.'-output_an_ascii_copy') then
                         read(tmpstr2,*) write_an_ascii_copy
-		elseif(trim(adjustl(tmpstr1)).eq.'-write_a_gadget_copy') then
-                        read(tmpstr2,*) write_a_gadget_copy
 		elseif(trim(adjustl(tmpstr1)).eq.'-just_output_head') then
                         read(tmpstr2,*) just_output_head
 		elseif(trim(adjustl(tmpstr1)).eq.'-print_all_head') then
@@ -108,7 +106,6 @@ implicit none
         write(*,'(A,f10.3)') ' xyz_rescale= ', xyz_rescale
         write(*,'(A,f10.3)') ' randrat    = ', randrat
         write(*,'(A,L5)') ' write_an_ascii_copy = ', write_an_ascii_copy
-        write(*,'(A,L5)') ' write_a_gadget_copy = ', write_a_gadget_copy
         write(*,'(A,L5)') ' just_output_head    = ', just_output_head
         if (just_output_head) then
                 write(*,'(A)') '  WARNING!! (LSS_gadget_to_fmt3) Will just output the head! fmt = 6*[double] (noutput, boxsize, mass, redshfit, Omega0, HubbleParam)'
@@ -141,7 +138,7 @@ implicit none
 
         ntotal=0
         n1 = 1
-        ng = 1
+
         do ifile = 1, nfile
                 print *
                 write(*,'(A)') ' ##########################'
@@ -197,70 +194,19 @@ implicit none
 
                 read(10001) block1
                 read(10001) xyzvs(1:3,n1:n2); xyzvs(1:3,n1:n2)=xyzvs(1:3,n1:n2)*xyz_rescale
-                !read(10001) xyzvsg(1:3,ng:ng+block1-1)
                 read(10001) block2
                 chbk = check_blocks(block1,block2)
                 write(*,'(A,3f10.3,5x,3f10.3)') '     begin and end of xyzs: ', xyzvs(1:3,n1), xyzvs(1:3,n2)
 
                 read(10001) block1
                 read(10001) xyzvs(4:6,n1:n2)
-                !read(10001) xyzvsg(4:6,ng:ng+block1-1)
                 read(10001) block2
                 chbk = check_blocks(block1,block2)
                 write(*,'(A,3f10.3,5x,3f10.3)') '     begin and end of   vs: ', xyzvs(4:6,n1), xyzvs(4:6,n2)
                 n1 = n2+1
-                !ng = ng + block1
-               ! if(write_a_gadget_copy) then
-               !         do
-               !                 read(10001,IOSTAT=EOF) blockg
-               !                 if(EOF.gt.0) then
-               !                         print*, 'Read error !!!'
-               !                 else if(EOF.lt.0) then
-               !                         exit
-               !                 else
-               !                         read(10001) xyzvsg(1:6,ng:ng+blockg-1)
-               !                         ng = ng + blockg
-               !                 endif
-               !         enddo
-               ! endif
 
-               ! read(10001,IOSTAT=EOF) blockg
                 close(10001)
         enddo
-
-        !if(write_a_gadget_copy) then
-
-        !do ifile = 1, nfile
-        !        print *
-        !        write(*,'(A)') ' ##########################'
-        !        write(*,'(A,A,A)'), ' open ', trim(adjustl(inputfiles(ifile))), ' for gadget_merge'
-        !        open(file=trim(adjustl(inputfiles(ifile))),unit=10002,action='read',form='unformatted')
-        !                do
-        !                        read(10002,IOSTAT=EOF) blockg
-        !                        if(EOF.gt.0) then
-        !                                print*, 'Read error !!!'
-        !                        else if(EOF.lt.0) then
-        !                                exit
-        !                        else
-        !                                read(10002) block1, headinfo, block2; headinfo.boxsize = headinfo.boxsize*xyz_rescale
-                                        !chbk = check_blocks(block1,block2)
-                                        !read(10002) block1
-        !                                read(10002) xyzvsg(1:6,ng:ng+blockg-1)
-                                        !read(10002) block2
-                                        !chbk = check_blocks(block1,block2)
-
-                                        !read(10002) block1
-                                        !read(10002) xyzvsg(4:6,ng:ng+blockg-1)
-                                        !read(10002) block2
-                                        !chbk = check_blocks(block1,block2)
-                !write(*,'(A,3f10.3,5x,3f10.3)') '     begin and end of   vs: ', xyzvs(4:6,n1), xyzvs(4:6,n2)
-         !                               ng = ng + blockg
-         !                       endif
-         !               enddo
-         !       close(10002)
-        !enddo
-        !endif
-
         print * 
         print *, '#########################'
         write(*,'(A,i15,A,i8,A)') ' Finishing read-in.  In total we read-in', ntotal, ' particles in ', nfile, ' files.'
@@ -316,39 +262,10 @@ implicit none
         write(2001) xyzvs(1:7,is(1:noutput))
         close(2001)
 
-        if(write_a_gadget_copy) then
-                print *
-                write(*,'(A)') '   output an gadget file as copy... file = '//trim(adjustl(outputname))//'.gadget_copy'
-                open(file=trim(adjustl(outputname))//'.gadget_copy',unit=2001,form='unformatted',action='write')
-                !block0 = 256
-                !write(2001) block0
-                headinfo.npart(2) = noutput
-                write(2001) headinfo
-                !write(2001) block0
-                write(*,*)
-                write(*,'(i15,A,i15,A,f12.6)') noutput, ' particles selected from ', ntotal, '       rat = ', real(noutput)/real(ntotal)
-                write(*,'(A)') '   starting write particles. format = block+headinfo+block+block+[x,y,z]*noutput+block+block+[vx,vy,vz]*noutput+block ...'
-                !blockg = noutput*12
-                !write(2001) blockg
-                write(2001) xyzvs(1:3,is(1:noutput))
-                !write(2001) blockg
-                !write(2001) blockg
-                write(2001) xyzvs(4:6,is(1:noutput))
-                !write(2001) blockg
-                ! allocate(ids(noutput));
-                !do i = 1, noutput
-                !        ids(i) = i
-                !enddo
-                !write(2001) ids
-                write(2001) is(1:noutput) ! added by xiaodong - to have the ids ! to be supported by rockstar
-                close(2001)
-        endif
         if(write_an_ascii_copy) then
                 print *
                 write(*,'(A)') '   output an ascii file as copy... file = '//trim(adjustl(outputname))//'.ascii_copy'
                 open(file=trim(adjustl(outputname))//'.ascii_copy',unit=2001,action='write')
-                write(*,*)
-                write(*,'(i15,A,i15,A,f12.6)') noutput, ' particles selected from ', ntotal, '       rat = ', real(noutput)/real(ntotal)
                 do i = 1, noutput
                         write(2001,'(6e15.7," 1")') xyzvs(1:6,is(i))
                 enddo

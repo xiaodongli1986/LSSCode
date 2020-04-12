@@ -49,6 +49,11 @@ EXE47 = ../bin/LSS_cic_b
 EXE49 = ../bin/LSS_binary_to_ascii
 EXE50 = ../bin/LSS_cic
 EXE51 = ../bin/LSS_gadget_to_fmt3
+EXE52 = ../bin/LSS_lpicola_to_fmt3
+EXE53 = ../bin/LSS_lpicola_to_gadget
+EXE54 = ../bin/LSS_lpicola_lightcone_boxsplit
+EXE55 = ../bin/LSS_gadget_print_head
+EXE56 = ../bin/LSS_rockstar_select_xyzvxvyvz_mvir_vmax
 OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o
 #F90C = ifort -heap-arrays -diag-disable 6009 #gfortran #mpif90 -heap-arrays
 #OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o #LSS_kdtree3pcf.o kdtree2.o
@@ -63,8 +68,8 @@ F90Cnompi = ifort -heap-arrays
 F90FLAGS = 
 
 default: $(EXE2)
-nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41)          $(EXE43)                   $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51)
-all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51)
+nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41)          $(EXE43)                   $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56)
+all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56)
 
 test: $(EXE0)
 bsk: $(EXE2)
@@ -115,6 +120,11 @@ cic_b: $(EXE47)
 binary_to_ascii: $(EXE49)
 cic: $(EXE50)
 gadget_to_fmt3: $(EXE51)
+lpicola_to_fmt3: $(EXE52)
+lpicola_to_gadget: $(EXE53)
+lpicola_lightcone_boxsplit: $(EXE54)
+gadget_print_head: $(EXE55)
+rockstar_select_xyzvxvyvz_mvir_vmax: $(EXE56)
 AMTB: AMTB
 
 $(EXE0): $(OBJS) LSS_main_test.o
@@ -219,6 +229,16 @@ $(EXE50): LSS_cosmo_funs.o LSS_main_cic.o
 	$(F90C) -o $(EXE50) LSS_tools.o LSS_cosmo_funs.o  LSS_main_cic.o
 $(EXE51): LSS_cosmo_funs.o LSS_main_gadget_to_fmt3.o
 	$(F90C) -o $(EXE51) LSS_tools.o LSS_cosmo_funs.o  LSS_main_gadget_to_fmt3.o
+$(EXE52): LSS_cosmo_funs.o LSS_main_lpicola_to_fmt3.o
+	$(F90C) -o $(EXE52) LSS_tools.o LSS_cosmo_funs.o  LSS_main_lpicola_to_fmt3.o
+$(EXE53): LSS_cosmo_funs.o LSS_main_lpicola_to_gadget.o
+	$(F90C) -o $(EXE53) LSS_tools.o LSS_cosmo_funs.o  LSS_main_lpicola_to_gadget.o
+$(EXE54): LSS_cosmo_funs.o LSS_main_lpicola_lightcone_boxsplit.o
+	$(F90C) -o $(EXE54) LSS_tools.o LSS_cosmo_funs.o  LSS_main_lpicola_lightcone_boxsplit.o
+$(EXE55): LSS_cosmo_funs.o LSS_main_gadget_print_head.o
+	$(F90C) -o $(EXE55) LSS_tools.o LSS_cosmo_funs.o  LSS_main_gadget_print_head.o
+$(EXE56): LSS_cosmo_funs.o LSS_main_rockstar_select_xyzvxvyvz_mvir_vmax.o
+	$(F90C) -o $(EXE56) LSS_tools.o LSS_cosmo_funs.o  LSS_main_rockstar_select_xyzvxvyvz_mvir_vmax.o
 amtb: amtb
 
 
@@ -283,6 +303,11 @@ LSS_main_binary_to_ascii: LSS_cosmo_funs.o
 LSS_main_binary_to_ascii: LSS_cosmo_funs.o
 LSS_main_cic: LSS_cosmo_funs.o
 LSS_main_gadget_to_fmt3: LSS_cosmo_funs.o
+LSS_main_lpicola_to_fmt3: LSS_cosmo_funs.o
+LSS_main_lpicola_to_gadget: LSS_cosmo_funs.o
+LSS_main_lpicola_lightcone_boxsplit: LSS_cosmo_funs.o
+LSS_main_gadget_print_head: LSS_cosmo_funs.o
+LSS_main_rockstar_select_xyzvxvyvz_mvir_vmax: LSS_cosmo_funs.o
 GYPS: GYPS
 #LSS_main.o: LSS_settings_init.o
 #LSS_main.o: LSS_tools.o
@@ -294,4 +319,4 @@ GYPS: GYPS
 	$(F90C) -c $< -o $@
 
 clean :
-	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47) $(EXE49) $(EXE50) $(EXE51)
+	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47) $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56)
