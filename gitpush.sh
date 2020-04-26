@@ -8,5 +8,6 @@ git add src/*.sh
 git add src/Makefile
 git add bin/LSS_sayhellotoraphael
 git add data/DEC_vs_RAspan-to-DECspan.txt
+git add paper/*.tar.gz
 git commit -m 'minor changes'
 git push

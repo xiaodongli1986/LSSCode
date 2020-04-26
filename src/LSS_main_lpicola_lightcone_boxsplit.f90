@@ -244,6 +244,7 @@ implicit none
                 open(unit=nowunit, file=trim(adjustl(inputfiles(ifile))), action='read',form='unformatted')
                 do
                         read(nowunit,IOSTAT=EOF) block1
+                        !print *, 'block1 = ', block1
                         if(EOF.gt.0) then
                                 print*, 'Read error in file: ', trim(adjustl(inputfiles(ifile)))
                                 print*, 'Exiting program'
@@ -251,7 +252,11 @@ implicit none
                                ! If EOF < 0 then we have read all the chunks
                                 exit
                         else
+                                !print *, 'before allocating'
+                                !call system('sleep 1')
                                 allocate(tmp_xyzvs(6,block1)); read(nowunit) tmp_xyzvs;
+                                !print *, 'after allocating'
+                                !call system('sleep 1')
                                 do i = 1, block1
                                         x=tmp_xyzvs(1,i); y=tmp_xyzvs(2,i); z=tmp_xyzvs(3,i); 
                                         call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)

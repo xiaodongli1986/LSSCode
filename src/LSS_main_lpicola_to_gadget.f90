@@ -267,7 +267,7 @@ implicit none
         !type(head) :: headinfo
         headinfo.npart = 0; headinfo.npart(2) = noutput
         headinfo.mass = 0.; headinfo.mass(2) = parmass
-        headinfo.time = 1.; headinfo.redshift = 0.;
+        headinfo.time = 1.; headinfo.redshift = 0; !headinfo.redshift = 0.1;
         headinfo.flag_sfr = 0; headinfo.flag_feedback=0; 
         headinfo.npartTotal = 0; headinfo.npartTotal(2) = noutput
         headinfo.flag_cooling = 0; headinfo.num_files = 1

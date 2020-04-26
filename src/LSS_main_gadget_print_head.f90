@@ -55,6 +55,8 @@ implicit none
         call getarg(1,tmpstr1)
         read(tmpstr1,'(A)') inputfile
 
+        xyz_rescale = 1.
+
 
 
         write(*,'(A)') '##################################################################################################################'
@@ -75,9 +77,10 @@ implicit none
         write(*,'(A,6i12)')       ' npartTotal(6) = ', headinfo.npartTotal
         write(*,'(A,2i12)')       ' flag_cooling, num_files = ', headinfo.flag_cooling, headinfo.num_files
         write(*,'(A,4e15.7)')     ' BoxSize, Omega0, OmegaLambda, HubbleParam =',  headinfo.BoxSize, headinfo.Omega0, headinfo.OmegaLambda, headinfo.HubbleParam
+        write(*,'(A,24i)')     ' fill(24) = ',  headinfo.fill
 
-        write(*,'(A,3f14.5)')'   om /ol / h         = ', headinfo.Omega0, headinfo.OmegaLambda, headinfo.HubbleParam
-        write(*,'(A,3f14.5)')'   redshift / boxsize = ', headinfo.redshift, headinfo.boxsize
+        !write(*,'(A,3f14.5)')'   om /ol / h         = ', headinfo.Omega0, headinfo.OmegaLambda, headinfo.HubbleParam
+        !write(*,'(A,3f14.5)')'   redshift / boxsize = ', headinfo.redshift, headinfo.boxsize
         nnow = 0;
         do i = 1, 6
                 if(headinfo.npart(i).ne.0) then
