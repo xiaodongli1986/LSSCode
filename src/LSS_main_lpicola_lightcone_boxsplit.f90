@@ -25,6 +25,32 @@ contains
                         if(izs(2) .ne. izs(1)) nwrites(3) = 2
                 endif
         end subroutine determine_iwrites
+
+
+       	subroutine read_in_colanpar(filename, npar)
+                character(len=char_len) :: filename, filenamenpar
+                integer *8 :: npar
+                filenamenpar = trim(adjustl(filename))//".npar"
+                open(file=trim(adjustl(filenamenpar)),unit=1000,action='read',form='binary',access='stream'); read(1000) npar; close(1000)
+        end subroutine read_in_colanpar
+
+	subroutine read_in_coladata(filename, npar, rmid, ids, xyzvs)
+                character(len=char_len) :: filename
+                integer *8 :: npar,  ids(npar), i
+                real :: xyzvs(6,npar), rmid
+
+
+                open(file=trim(adjustl(filename)),unit=1001, action='read', form='binary', access='stream')
+                read(1001) rmid
+                do i =1, npar
+                        read(1001) ids(i); read(1001) xyzvs(1:6,i)
+                enddo
+                !write(*, '(A,f12.3)')       '   read-in rmid = ', rmid1
+                !write(*, '(A,i15,i15)')     '   ids1 begin/end with ' , ids1(1), ids1(npar1)
+                !write(*, '(A,6(f12.3))')    '   xyzvs1 begin with ', xyzvs1(:,1)
+                !write(*, '(A,6(f12.3))')    '   xyzvs1  end  with ', xyzvs1(:,npar1)
+	end subroutine read_in_coladata
+
 end module lightcone_boxsplit_tools
 
 
@@ -37,9 +63,10 @@ use lightcone_boxsplit_tools
 
 implicit none
 
-	character(len=char_len) :: tmpstr1, tmpstr2, tmpstr3, tmpstr4, tmpstr5, inputfilelist, outputfile, printstr, suffix, infofile, outputname, headfile=''
+	character(len=char_len) :: tmpstr1, tmpstr2, tmpstr3, tmpstr4, tmpstr5, inputfilelist, outputfile, printstr, suffix, infofile, outputname, headfile='', inputtypestr
         character(len=char_len), allocatable :: inputfiles(:), outputfiles(:)
-        integer :: i, nbox, nfile, ifile, ibox, ixs(2), iys(2), izs(2), nwrites(3), i1,i2,i3, ix,iy,iz, iwrite, flag, nown
+        integer, parameter:: type_lpicola=0, type_cola = 1
+        integer :: i, nbox, nfile, ifile, ibox, ixs(2), iys(2), izs(2), nwrites(3), i1,i2,i3, ix,iy,iz, iwrite, flag, nown, inputtype = type_lpicola
         real(dl) :: overlap_distance, xyzmin, xyzmax, x,y,z, boxsize,parmass,omegam, redshift,hubble,w
         real(dl), allocatable :: xyz_ranges(:,:,:)
         logical :: add1, binary_IO = .false., block_write = .true.
@@ -57,10 +84,16 @@ implicit none
         end type head
         type(head) :: headinfo
 
-        integer*4 :: ntotal, EOF, block1, nowunit
+        integer*4 :: EOF, block1, nowunit
+        integer*8 :: ntotal
         real, allocatable::  xyzvs(:,:), tmp_xyzvs(:,:)
         integer, allocatable :: iwrite_counts(:,:,:)
         !integer, allocatable :: nparticles(:)
+
+        real :: cola_rmid
+        integer *8 :: cola_npar
+        integer *8, allocatable :: cola_ids(:)
+        real, allocatable :: cola_xyzvs(:,:)
 
         type data_arrays
                 integer :: n
@@ -75,7 +108,7 @@ implicit none
 	! mpi variables
 !	integer :: ierr, nproc, myid
 
-	printstr = ' ## Usage: EXE   -inputfilelist ?   -outputname ?   -nbox ?   -overlap_distance ?   -xyzmin ?   -xyzmax ?  -add1 T/F   -binary_IO F    -headfile headfile     ### Cut the lpicola lightcone sample into small boxes with overlapping region.  Convenient for halo-finding.    '
+	printstr = ' ## Usage: EXE   -inputfilelist ?   -outputname ?   -nbox ?   -overlap_distance ?   -xyzmin ?   -xyzmax ?  -add1 T/F   -binary_IO F    -headfile headfile     -inputtype cola/lpicola (cola or lpicola?) ### Cut the lpicola lightcone sample into small boxes with overlapping region.  Convenient for halo-finding.    '
 
 !	call mpi_init(ierr)
 !	call mpi_comm_size(mpi_comm_world,nproc,ierr)
@@ -113,6 +146,8 @@ implicit none
 			read(tmpstr2,*) binary_IO
                 elseif(trim(adjustl(tmpstr1)).eq.'-headfile' .or. trim(adjustl(tmpstr1)).eq.'-lpicola_headfile')  then
                         read(tmpstr2,'(A)') headfile
+		elseif(trim(adjustl(tmpstr1)).eq."-inputtype") then
+			read(tmpstr2,*) inputtypestr
 		else
 			print *, "Unkown argument: ", trim(adjustl(tmpstr1))
 			write(*,"(A)") trim(adjustl(printstr))
@@ -140,6 +175,18 @@ implicit none
         write(tmpstr3,'(f10.1)') overlap_distance
         write(tmpstr4,'(f10.1)') xyzmin
         write(tmpstr5,'(f10.1)') xyzmax
+
+
+        if(trim(adjustl(inputtypestr)).eq.'lpicola') then
+                inputtype = type_lpicola
+                write(*,'(A,A)') ' set inputtype as lpicola: inputtypestr= ', trim(adjustl(inputtypestr))
+        elseif(trim(adjustl(inputtypestr)).eq.'cola') then
+                inputtype = type_cola
+                write(*,'(A,A)') ' set inputtype as cola: inputtypestr= ', trim(adjustl(inputtypestr))
+        else
+                inputtype = type_lpicola
+                write(*,'(A,A)') ' set inputtype as lpicola: inputtypestr= ', trim(adjustl(inputtypestr))
+        endif
 
 
 
@@ -239,7 +286,8 @@ implicit none
            ! count #-lines
            ntotal=0
            do ifile = 1, nfile
-                write(*,'(A,A,A,"(",i4," of",i4,")")') '     opening ', trim(adjustl(inputfiles(ifile))), ' for countline...', ifile, nfile
+              write(*,'(A,A,A,"(",i4," of",i4,")")') '     opening ', trim(adjustl(inputfiles(ifile))), ' for countline...', ifile, nfile
+              if(inputtype .eq. type_lpicola) then
                 nowunit = nbox*nbox*nbox+100000
                 open(unit=nowunit, file=trim(adjustl(inputfiles(ifile))), action='read',form='unformatted')
                 do
@@ -273,6 +321,27 @@ implicit none
                         endif
                 enddo
                 close(nowunit)
+             elseif(inputtype .eq. type_cola) then
+                call read_in_colanpar(inputfiles(ifile), cola_npar)
+                if(cola_npar.eq.0) then
+                        print *, 'cycle because of npar =0: ', cola_npar; cycle
+                endif
+                allocate(cola_ids(cola_npar), cola_xyzvs(6,cola_npar))
+                call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
+                do i = 1, cola_npar
+                        x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
+                        call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
+                        if(flag.eq.0) cycle
+                        do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
+                                ix = ixs(i1); iy = iys(i2); iz = izs(i3)
+                                iwrite_counts(ix,iy,iz) = iwrite_counts(ix,iy,iz) + 1
+                                !iwrite = (ix-1)*nbox*nbox + (iy-1)*nbox + iz + 200000
+                                !write(iwrite, '(A)') trim(adjustl(tmpstr1))
+                        enddo; enddo; enddo
+                enddo
+                deallocate(cola_ids, cola_xyzvs)
+                ntotal  = ntotal + cola_npar
+             endif
            enddo
 
            print *; print *, '#########################'
@@ -291,9 +360,10 @@ implicit none
              ntotal=0
              do ifile = 1, nfile
                 write(*,'(A,A,A,"(",i4," of",i4,")")') '     opening ', trim(adjustl(inputfiles(ifile))), ' for block read-in...', ifile, nfile
-                nowunit = nbox*nbox*nbox+100000
-                open(unit=nowunit, file=trim(adjustl(inputfiles(ifile))), action='read',form='unformatted')
-                do
+                if(inputtype.eq.type_lpicola) then
+                  nowunit = nbox*nbox*nbox+100000
+                  open(unit=nowunit, file=trim(adjustl(inputfiles(ifile))), action='read',form='unformatted')
+                  do
                         read(nowunit,IOSTAT=EOF) block1
                         if(EOF.gt.0) then
                                 print*, 'Read error in file: ', trim(adjustl(inputfiles(ifile)))
@@ -321,8 +391,35 @@ implicit none
                                 deallocate(tmp_xyzvs)
                                 ntotal  = ntotal + block1
                         endif
-                enddo
-                close(nowunit)
+                  enddo
+                  close(nowunit)
+               elseif(inputtype.eq.type_cola) then
+                 call read_in_colanpar(inputfiles(ifile), cola_npar)
+                 if(cola_npar.eq.0) then
+                        print *, 'cycle because of npar =0: ', cola_npar; cycle
+                 endif
+                 allocate(cola_ids(cola_npar), cola_xyzvs(6,cola_npar))
+                 call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
+                 do i = 1, cola_npar
+                        x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
+                        call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
+                        if(flag.eq.0) cycle
+                        do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
+                                        ix = ixs(i1); iy = iys(i2); iz = izs(i3)
+                                        all_data(ix,iy,iz).n = all_data(ix,iy,iz).n + 1; nown = all_data(ix,iy,iz).n 
+                                        all_data(ix,iy,iz).xyzs(1:3,nown) = cola_xyzvs(1:3,i)
+                                        all_data(ix,iy,iz).vxvyvzs(1:3,nown) = cola_xyzvs(4:6,i)
+                                        all_data(ix,iy,iz).ids(nown) = ntotal+i
+                        enddo; enddo; enddo
+                        ntotal  = ntotal + cola_npar
+                 enddo
+                 ! need to store cola particles to this structure!!! all_data...
+                 ! need to : generate headfile for cola;; and run for test... 
+                 ! need to read this code carefully...
+                 ! need to add inputs to cola_halo; 
+               endif
+
+
              enddo
 
              do i1 = 1,nbox; do i2=1,nbox; do i3=1,nbox

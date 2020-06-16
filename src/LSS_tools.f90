@@ -2067,4 +2067,26 @@ contains
                 endif
                 
         end function logmi
+
+
+        ! compute the mass of a particle in the N-body simulation. 
+        double precision function particle_mass(omegam, h, boxsize, nparticle)
+                double precision :: omegam, h, boxsize, nparticle
+                double precision :: G, M_sun, Mpc, rho, rho_h, m_p1, m_p2
+
+                G = 6.67428*(10.**-8.) !cm3*g-1*s-2
+                M_sun = 1.98892*(10.**33.) !g
+                Mpc = 30.85677*(10.**23.) !cm
+                !h = float(HubbleParam); Omega_m = float(Omega); boxsize=float(boxsize); nparticle=float(nparticle)
+
+                rho = (3.*((100.*h)**2.)/(8.*const_pi*G)) * ((10.**10.)*Mpc/M_sun) !#M_sun*h2/Mpc-3
+                !print *, rho
+                rho_h = rho/(h**2.)
+                !print *, rho_h
+                m_p1 = (((boxsize**3.)*3.*omegam*((100.)**2.))/(nparticle**3*8*const_pi*G)) * ((10.**10.) *Mpc /M_sun) !#M_sun/h
+                !print *, m_p1
+                m_p2 = (rho_h*omegam*(boxsize**3))/(nparticle**3)
+                !print *, m_p2
+                particle_mass = m_p2
+        end function particle_mass
 end module LSS_tools

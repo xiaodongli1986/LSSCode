@@ -142,6 +142,7 @@ implicit none
         ntotal=0
         n1 = 1
         ng = 1
+        nparttotal = 0
         do ifile = 1, nfile
                 print *
                 write(*,'(A)') ' ##########################'
@@ -191,9 +192,29 @@ implicit none
                 endif
 
                 n2 = n1+nnow-1
+                print *, 'nnow = ', nnow
+                nparttotal = nparttotal + nnow
+                close(10001)
+        enddo
 
-                nparttotal = sum(headinfo.nparttotal)
-                if(ifile.eq.1) allocate(xyzvs(7,nparttotal))
+        ntotal = nparttotal
+        allocate(xyzvs(7,nparttotal))
+        n1 = 1
+        ng = 1
+        do ifile = 1, nfile
+
+                open(file=trim(adjustl(inputfiles(ifile))),unit=10001,action='read',form='binary',access='sequential')
+                read(10001) block1, headinfo, block2; headinfo.boxsize = headinfo.boxsize*xyz_rescale
+                nnow = 0;
+                do i = 1, 6
+                        if(headinfo.npart(i).ne.0) then
+                                write(*,'("   In total",i12,A,i3,A,e14.7,A,i12,A)') headinfo.npart(i), ' particles with type ', i, ', mass',&
+                                        headinfo.mass(i),' (',headinfo.nparttotal(i),') in total'
+                                nonzeromass = headinfo.mass(i)
+                                nnow = nnow+headinfo.npart(i)
+                        endif
+                enddo
+                n2 = n1+nnow-1
 
                 read(10001) block1
                 read(10001) xyzvs(1:3,n1:n2); xyzvs(1:3,n1:n2)=xyzvs(1:3,n1:n2)*xyz_rescale
