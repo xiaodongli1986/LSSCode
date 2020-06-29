@@ -34,11 +34,10 @@ contains
                 open(file=trim(adjustl(filenamenpar)),unit=1000,action='read',form='binary',access='stream'); read(1000) npar; close(1000)
         end subroutine read_in_colanpar
 
-	subroutine read_in_coladata(filename, npar, rmid, ids, xyzvs)
+	subroutine read_in_coladata_slow(filename, npar, rmid, ids, xyzvs)
                 character(len=char_len) :: filename
-                integer *8 :: npar,  ids(npar), i
+                integer *8 :: npar,  ids(npar), i 
                 real :: xyzvs(6,npar), rmid
-
 
                 open(file=trim(adjustl(filename)),unit=1001, action='read', form='binary', access='stream')
                 read(1001) rmid
@@ -49,7 +48,18 @@ contains
                 !write(*, '(A,i15,i15)')     '   ids1 begin/end with ' , ids1(1), ids1(npar1)
                 !write(*, '(A,6(f12.3))')    '   xyzvs1 begin with ', xyzvs1(:,1)
                 !write(*, '(A,6(f12.3))')    '   xyzvs1  end  with ', xyzvs1(:,npar1)
-	end subroutine read_in_coladata
+	end subroutine read_in_coladata_slow
+
+	subroutine read_in_coladata(filename, npar, rmid, ids, xyzvs)
+                character(len=char_len) :: filename
+                integer *8 :: npar,  ids(npar), i
+                real :: xyzvs(6,npar), id_xyzvs(8,npar), rmid
+
+                open(file=trim(adjustl(filename)),unit=1001, action='read', form='binary', access='stream')
+                read(1001) rmid
+                read(1001) id_xyzvs ! cheat: read-in integer*8 as two real numbers ! since we do not use ids, it is OK
+                xyzvs = id_xyzvs(3:8,:)
+        end subroutine read_in_coladata
 
 end module lightcone_boxsplit_tools
 
@@ -324,7 +334,7 @@ implicit none
              elseif(inputtype .eq. type_cola) then
                 call read_in_colanpar(inputfiles(ifile), cola_npar)
                 if(cola_npar.eq.0) then
-                        print *, 'cycle because of npar =0: ', cola_npar; cycle
+                        print *, '             cycle because of npar =0: ', int(cola_npar); cycle
                 endif
                 allocate(cola_ids(cola_npar), cola_xyzvs(6,cola_npar))
                 call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
@@ -413,6 +423,7 @@ implicit none
                         enddo; enddo; enddo
                         ntotal  = ntotal + cola_npar
                  enddo
+                 deallocate(cola_ids, cola_xyzvs)
                  ! need to store cola particles to this structure!!! all_data...
                  ! need to : generate headfile for cola;; and run for test... 
                  ! need to read this code carefully...
@@ -464,7 +475,7 @@ implicit none
                 write(*,'(A)') ' * writing x,y,z, vx,vy,vz (block_write mode)... '
                 do i1=1,nbox; do i2=1,nbox; do i3=1,nbox
                         iwrite = (i1-1)*nbox*nbox + (i2-1)*nbox + i3 + 200000
-                        write(*,'(A,A)') ' ** writing to file', trim(adjustl(outputfiles(iwrite-200000)))
+                        write(*,'(A,A)') ' ** writing to file ', trim(adjustl(outputfiles(iwrite-200000)))
                         write(iwrite) all_data(i1,i2,i3).xyzs
                         write(iwrite) iwrite_counts(i1,i2,i3)*3*4
                         write(iwrite) iwrite_counts(i1,i2,i3)*3*4

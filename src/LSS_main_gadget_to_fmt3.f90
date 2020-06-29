@@ -62,7 +62,7 @@ implicit none
 		if(trim(adjustl(tmpstr1)).eq.'-input') then
 			read(tmpstr2,'(A)') inputfile
 		elseif(trim(adjustl(tmpstr1)).eq.'-output') then
-			read(tmpstr2,*) outputname
+			read(tmpstr2,'(A)') outputname
 		elseif(trim(adjustl(tmpstr1)).eq.'-xyz_rescale') then
 			read(tmpstr2,*) xyz_rescale
 		elseif(trim(adjustl(tmpstr1)).eq.'-xcut_min') then
