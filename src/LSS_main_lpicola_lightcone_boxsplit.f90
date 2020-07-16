@@ -73,13 +73,14 @@ use lightcone_boxsplit_tools
 
 implicit none
 
-	character(len=char_len) :: tmpstr1, tmpstr2, tmpstr3, tmpstr4, tmpstr5, inputfilelist, outputfile, printstr, suffix, infofile, outputname, headfile='', inputtypestr
+	character(len=char_len) :: tmpstr1, tmpstr2, tmpstr3, tmpstr4, tmpstr5, inputfilelist, outputfile, printstr, suffix, infofile, outputname, headfile='', inputtypestr, par_random_output_file
         character(len=char_len), allocatable :: inputfiles(:), outputfiles(:)
-        integer, parameter:: type_lpicola=0, type_cola = 1
-        integer :: i, nbox, nfile, ifile, ibox, ixs(2), iys(2), izs(2), nwrites(3), i1,i2,i3, ix,iy,iz, iwrite, flag, nown, inputtype = type_lpicola
-        real(dl) :: overlap_distance, xyzmin, xyzmax, x,y,z, boxsize,parmass,omegam, redshift,hubble,w
+        integer, parameter:: type_lpicola=0, type_cola = 1, par_random_output_unit = 10000000
+        integer :: i, nbox, nfile, ifile, ibox, ixs(2), iys(2), izs(2), nwrites(3), i1,i2,i3, ix,iy,iz, iwrite, flag, nown, inputtype = type_lpicola, n_par_random_output=0
+        real(dl) :: overlap_distance, xyzmin, xyzmax, x,y,z, boxsize,parmass,omegam, redshift,hubble,w,  par_random_output_rat=0.01, tmpx
         real(dl), allocatable :: xyz_ranges(:,:,:)
         logical :: add1, binary_IO = .false., block_write = .true.
+        double precision :: tmpdoubles(64)
 
 
         !gadget head
@@ -118,7 +119,7 @@ implicit none
 	! mpi variables
 !	integer :: ierr, nproc, myid
 
-	printstr = ' ## Usage: EXE   -inputfilelist ?   -outputname ?   -nbox ?   -overlap_distance ?   -xyzmin ?   -xyzmax ?  -add1 T/F   -binary_IO F    -headfile headfile     -inputtype cola/lpicola (cola or lpicola?) ### Cut the lpicola lightcone sample into small boxes with overlapping region.  Convenient for halo-finding.    '
+	printstr = ' ## Usage: EXE   -inputfilelist ?   -outputname ?   -nbox ?   -overlap_distance ?   -xyzmin ?   -xyzmax ?  -add1 T/F   -binary_IO F    -headfile headfile     -inputtype cola/lpicola (cola or lpicola?)    -par_random_output_rat 0.01  ### Cut the lpicola lightcone sample into small boxes with overlapping region.  Convenient for halo-finding.    '
 
 !	call mpi_init(ierr)
 !	call mpi_comm_size(mpi_comm_world,nproc,ierr)
@@ -158,6 +159,8 @@ implicit none
                         read(tmpstr2,'(A)') headfile
 		elseif(trim(adjustl(tmpstr1)).eq."-inputtype") then
 			read(tmpstr2,*) inputtypestr
+		elseif(trim(adjustl(tmpstr1)).eq."-par_random_output_rat") then
+			read(tmpstr2,*) par_random_output_rat
 		else
 			print *, "Unkown argument: ", trim(adjustl(tmpstr1))
 			write(*,"(A)") trim(adjustl(printstr))
@@ -205,6 +208,11 @@ implicit none
 	endif
         infofile = trim(adjustl(outputname))//trim(adjustl(suffix))//'.info'
 
+        ! par_random_output_file
+        write(tmpstr1, '(f10.3)') par_random_output_rat
+        par_random_output_file = trim(adjustl(outputname))//'_'//trim(adjustl(tmpstr1))//'particles'
+        write(*,'(A)') ' output '//trim(adjustl(tmpstr1))//' of all particles to '//trim(adjustl(par_random_output_file))
+
         call count_line_number(inputfilelist, nfile)
         print *, 'In total ', nfile, 'files'
         allocate(inputfiles(nfile),outputfiles(nbox*nbox*nbox))
@@ -225,6 +233,7 @@ implicit none
         allocate(iwrite_counts(nbox,nbox,nbox))
         iwrite_counts = 0
 
+
         ! ascii format for input and output files!
         if(.not.binary_IO) then
 
@@ -233,6 +242,7 @@ implicit none
                print *, trim(adjustl(outputfiles(ibox)))
                open(unit=ibox+200000, file = trim(adjustl(outputfiles(ibox))), action='write')
            enddo
+           open(unit=par_random_output_unit, file=trim(adjustl(par_random_output_file)), action='write') !par_random_output
  
 
            print *, 'Start read-in files.'
@@ -243,6 +253,15 @@ implicit none
                         read(nbox*nbox*nbox+100000, '(A)', end=100) tmpstr1
                         if(add1) tmpstr1 = trim(adjustl(tmpstr1))//' '//'1'
                         read(tmpstr1, *) x,y,z
+
+           !open(unit=par_random_output_unit, file=trim(adjustl(par_random_output_file)), action='write') !par_random_output
+                        call random_number(tmpx) !par_random_output
+                        if(tmpx<par_random_output_rat) then
+                                write(par_random_output_unit,'(A)')  trim(adjustl(tmpstr1)) !par_random_output
+                                n_par_random_output = n_par_random_output + 1
+                        endif
+                        
+           !            close(par_random_output_unit)
 
                         call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
                         if(flag.eq.0) cycle
@@ -287,6 +306,7 @@ implicit none
            do ibox = 1, nbox*nbox*nbox
                close(ibox + 200000)
            enddo
+           close(par_random_output_unit)
         else
            print *, 'IO_format = binary; will output following files...'
                                 !open(unit=nowunit+100, file='test.binary', action='write', access='stream', form='binary')
@@ -295,6 +315,7 @@ implicit none
            !#############################################################
            ! count #-lines
            ntotal=0
+           open(unit=par_random_output_unit,file=trim(adjustl(par_random_output_file)), action='write', access='stream',form='binary') !par_random_output
            do ifile = 1, nfile
               write(*,'(A,A,A,"(",i4," of",i4,")")') '     opening ', trim(adjustl(inputfiles(ifile))), ' for countline...', ifile, nfile
               if(inputtype .eq. type_lpicola) then
@@ -317,6 +338,13 @@ implicit none
                                 !call system('sleep 1')
                                 do i = 1, block1
                                         x=tmp_xyzvs(1,i); y=tmp_xyzvs(2,i); z=tmp_xyzvs(3,i); 
+
+                                        call random_number(tmpx) !par_random_output
+                                        if(tmpx<par_random_output_rat) then
+                                                write(par_random_output_unit)  tmp_xyzvs(:,i)
+                                                n_par_random_output = n_par_random_output + 1
+                                        endif
+
                                         call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
                                         if(flag.eq.0) cycle
                                         do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
@@ -340,6 +368,13 @@ implicit none
                 call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
                 do i = 1, cola_npar
                         x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
+
+                        call random_number(tmpx) !par_random_output
+                        if(tmpx<par_random_output_rat) then
+                                write(par_random_output_unit)  cola_xyzvs(:,i)
+                                n_par_random_output = n_par_random_output + 1
+                        endif
+
                         call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
                         if(flag.eq.0) cycle
                         do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
@@ -353,9 +388,11 @@ implicit none
                 ntotal  = ntotal + cola_npar
              endif
            enddo
+           close(par_random_output_unit) ! par_random_output
 
            print *; print *, '#########################'
            write(*,'(A,i15,A,i8,A)') ' Finishing count-line. In total we have ', ntotal, ' particles in ', nfile, ' files.'
+           write(*,'(A,i15,A,A)') ' Finishing particle output (stage 1). In total we have ', n_par_random_output, ' particles write to ', trim(adjustl(par_random_output_file))
 
            ! write everything once-for-all
            if(block_write)then
@@ -613,6 +650,35 @@ implicit none
         do ibox = 1, nbox*nbox*nbox
                close(ibox+200000)
         enddo
+
+        ! output particles
+        allocate(tmp_xyzvs(7,n_par_random_output))
+        open(unit=par_random_output_unit,file=trim(adjustl(par_random_output_file)),action='read', access='stream',form='binary')
+        read(par_random_output_unit) tmp_xyzvs(1:6,:)
+        tmp_xyzvs(7,:) = 1.0
+        close(par_random_output_unit)
+
+        open(file=trim(adjustl(par_random_output_file)),unit=par_random_output_unit,form='unformatted',action='write')
+        tmpdoubles = 0.
+        tmpdoubles(1) = n_par_random_output
+        tmpdoubles(2) = headinfo.boxsize
+        tmpdoubles(3) = parmass 
+        tmpdoubles(4) = headinfo.redshift
+        tmpdoubles(5) = headinfo.Omega0
+        tmpdoubles(6) = headinfo.HubbleParam
+
+
+        write(par_random_output_unit) tmpdoubles
+
+        write(*,*)
+        write(*,'(i15,A,i15,A,f12.6)') n_par_random_output, ' particles selected from ', ntotal, '       rat = ', real(n_par_random_output)/real(ntotal)
+        write(*,'(A)') '   staring write particles. format = block+[x,y,z,vx,vy,vz,1.0]*noutput+block ...'
+        write(par_random_output_unit) tmp_xyzvs(1:7,:)
+        close(par_random_output_unit)
+
+
+
+
 !        call mpi_barrier(mpi_comm_world,ierr)
 !        call mpi_finalize(ierr))
 

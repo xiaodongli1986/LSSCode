@@ -38,6 +38,28 @@ contains
 !          grid(ix1(0),  ix1(1), ix0(2)) += w6*wei
 !          grid(ix1(0),  ix0(1), ix1(2)) += w7*wei
 !          grid(ix1(0),  ix1(1), ix1(2)) += w8*wei
+
+
+        subroutine cic_rgrid(rgrid, xyzmin,xyzmax, nc)
+                integer, intent(in) :: nc
+                real, intent(in) :: xyzmin,xyzmax
+                real, intent(out) :: rgrid(nc,nc,nc)
+                integer :: i1,i2,i3 
+                real :: dx,dx_inv
+                dx = (xyzmax-xyzmin)/real(nc); dx_inv = 1./dx
+                write(*,'(A,i6,2f15.7)') '   (cic_xyz_vs) nc, dx, dx_inv = ',nc, dx, dx_inv
+                do i1=1,nc
+                do i2=1,nc 
+                do i3=1,nc
+                        rgrid(i3,i2,i1) =  ((xyzmin+dx*(i1-0.5))**2. + (xyzmin+dx*(i2-0.5))**2. + (xyzmin+dx*(i3-0.5))**2.)**0.5
+                enddo
+                enddo
+                enddo
+        end subroutine cic_rgrid
+
+                
+                
+
         subroutine cic_xyz_vs(xyzs,vs,rhogrid,vxgrid,vygrid,vzgrid,xyzmin,xyzmax,ndat,nc)
                 integer, intent(in) :: ndat, nc
                 real, intent(in) :: xyzs(3,ndat), vs(3,ndat),xyzmin,xyzmax
@@ -109,10 +131,12 @@ use cic
 
 implicit none
 
-	character(len=char_len) :: tmpstr1, tmpstr2, inputfile, outputname, printstr, inputfiles(10000)
-        integer :: i,j,k, i1,i2,j1,j2,k1,k2, ifile, nfile, nc, tmpint(64), block1, block2, ntotal, nnow, numarg, chbk, nsplit, n
-        real :: xyzmin, xyzmax, tmpfloats(64), xyz_rescale, xyz(3), vxvyvz(3)
-        real, allocatable:: rhogrid(:,:,:), vxgrid(:,:,:), vygrid(:,:,:), vzgrid(:,:,:) , xyzs(:,:), vs(:,:)
+	character(len=char_len) :: tmpstr1, tmpstr2, inputfile, outputname, printstr, inputfiles(10000), readin_fmt_str
+        integer :: i,j,k, i1,i2,j1,j2,k1,k2, ifile, nfile, nc, tmpint(64), block1, block2, ntotal, nnow, numarg, chbk, nsplit, n, readin_fmt
+        real :: xyzmin, xyzmax, tmpfloats(64), xyz_rescale, xyz(3), vxvyvz(3)  !, xshift=0., yshift=0., zshift=0.
+        real, allocatable:: rhogrid(:,:,:), vxgrid(:,:,:), vygrid(:,:,:), vzgrid(:,:,:) , xyzs(:,:), vs(:,:), rgrid(:,:,:)
+        integer, parameter :: fmt_gadget = 1, fmt_ascii = 2
+        logical :: do_rgrid = .false.
 
         type head
                 integer :: npart(6)
@@ -126,7 +150,7 @@ implicit none
         type(head) :: headinfo
 
 	
-	printstr = "Usage: LSS_cic -input inputfile -nc n-cells -xyzmin xyzmin -xyzmax xyzmax -output outputname -xyz_rescale xyz_rescale -nsplit nsplit. #### Example: LSS_cic -input snp04000e.\? -nc 512 -output snp04000e_cic"
+	printstr = "Usage: LSS_cic -input inputfile   -nc n-cells   -xyzmin xyzmin   -xyzmax xyzmax   -output outputname -xyz_rescale xyz_rescale   -nsplit nsplit    -readin_fmt  ascii/gadget   -do_grid T/F. #### Example: LSS_cic -input snp04000e.\? -nc 512 -output snp04000e_cic"
         numarg = iargc()
 	if(numarg.le.1) then
 		write(*,'(A)') printstr
@@ -153,6 +177,24 @@ implicit none
 			read(tmpstr2,*) xyz_rescale
 		elseif(trim(adjustl(tmpstr1)).eq.'-nsplit') then
 			read(tmpstr2,*) nsplit
+!		elseif(trim(adjustl(tmpstr1)).eq.'-xshift') then
+!			read(tmpstr2,*) xshift
+!		elseif(trim(adjustl(tmpstr1)).eq.'-yshift') then
+!			read(tmpstr2,*) yshift
+!		elseif(trim(adjustl(tmpstr1)).eq.'-zshift') then
+!			read(tmpstr2,*) zshift
+		elseif(trim(adjustl(tmpstr1)).eq.'-readin_fmt') then
+			read(tmpstr2,'(A)') readin_fmt_str
+                        if(trim(adjustl(readin_fmt_str)).eq.'gadget') then
+                                readin_fmt = fmt_gadget
+                        elseif(trim(adjustl(readin_fmt_str)).eq.'ascii') then
+                                readin_fmt = fmt_ascii
+                        else
+                                print *, ' (LSS_cic) ERROR! wrong readin_fmt_str: ', trim(adjustl(readin_fmt_str))
+                                stop
+                        endif
+                elseif(trim(adjustl(tmpstr1)).eq.'-do_rgrid') then
+                        read(tmpstr2,*) do_rgrid
 		else
 			print *, 'Unkown argument: ', trim(adjustl(tmpstr1))
 			write(*,'(A)') trim(adjustl(printstr))
@@ -161,11 +203,13 @@ implicit none
 	enddo
 
 	print *, 'LSS_cic, CIC density and velocity fields'
-        print *, ' inputfile  = ', trim(adjustl(inputfile))
-        print *, ' outputname = ', trim(adjustl(outputname))
+        write(*,'(A,A)')  '  inputfile  = ', trim(adjustl(inputfile))
+        write(*,'(A,A)')  '  outputname = ', trim(adjustl(outputname))
         print *, ' nc (celss) = ', nc
         print *, ' xyz_rescale= ', xyz_rescale
         print *, ' xyz range  = ', xyzmin, xyzmax
+        print *, ' do_rgrid   = ', do_rgrid
+        print *, ' readin_fmt = ', trim(adjustl(readin_fmt_str))
         write(*,'(A,i3,A,i8,A)'), '  nsplit^3   = ', nsplit, '^3 = ', nsplit**3, ' sets of outupt files.'
 
 
@@ -182,7 +226,7 @@ implicit none
         close(100); nfile = nfile-1
         print *, ' found ', nfile, 'files to read-in...'
         do i = 1, nfile
-                print *, i, trim(adjustl(inputfiles(i)))
+                write(*,'(i5,5x,A)') i, trim(adjustl(inputfiles(i)))
         enddo
 
         write(*,*) 'allocating rho/px/py/pz fields...'
@@ -194,61 +238,82 @@ implicit none
                 print *
                 write(*,'(A)') ' ##########################'
                 write(*,'(A,A,A)'), ' open ', trim(adjustl(inputfiles(ifile))), '...'
-                open(file=trim(adjustl(inputfiles(ifile))),unit=10001,action='read',form='binary',access='sequential')
-                read(10001) block1, headinfo, block2; headinfo.boxsize = headinfo.boxsize*xyz_rescale
-                chbk = check_blocks(block1,block2)
-                if(ifile.eq.1) then
-                        write(*,'(A,3f14.5)')'   om /ol / h         = ', headinfo.Omega0, headinfo.OmegaLambda, headinfo.HubbleParam
-                        write(*,'(A,3f14.5)')'   redshift / boxsize = ', headinfo.redshift, headinfo.boxsize
-                        if(xyzmax.eq.0.) then
-                                xyzmax = headinfo.boxsize
-                                print *, '  xyz range (reset)  = ', xyzmin, xyzmax
+                if(readin_fmt .eq. fmt_gadget) then
+                        open(file=trim(adjustl(inputfiles(ifile))),unit=10001,action='read',form='binary',access='sequential')
+                        read(10001) block1, headinfo, block2; headinfo.boxsize = headinfo.boxsize*xyz_rescale
+                        chbk = check_blocks(block1,block2)
+                        if(ifile.eq.1) then
+                                write(*,'(A,3f14.5)')'   om /ol / h         = ', headinfo.Omega0, headinfo.OmegaLambda, headinfo.HubbleParam
+                                write(*,'(A,3f14.5)')'   redshift / boxsize = ', headinfo.redshift, headinfo.boxsize
+                                if(xyzmax.eq.0.) then
+                                        xyzmax = headinfo.boxsize
+                                        print *, '  xyz range (reset)  = ', xyzmin, xyzmax
+                                endif
                         endif
+                        nnow = 0;
+                        do i = 1, 6
+                                if(headinfo.npart(i).ne.0) then
+                                        write(*,'("   In total",i12,A,i3,A,e14.7,A,i12,A)') headinfo.npart(i), ' particles with type ', i, ', mass',&
+                                                headinfo.mass(i),' (',headinfo.nparttotal(i),') in total'
+                                        nnow = nnow+headinfo.npart(i)
+                                endif
+                        enddo
+                        ntotal = ntotal+nnow
+        
+                        allocate(xyzs(3,nnow),vs(3,nnow))
+        
+                        read(10001) block1
+                        read(10001) xyzs; xyzs=xyzs*xyz_rescale
+                        read(10001) block2
+                        chbk = check_blocks(block1,block2)
+                        write(*,'(A,3f10.3,5x,3f10.3)') '     begin and end of xyzs: ', xyzs(:,1), xyzs(:,nnow)
+
+                        read(10001) block1
+                        read(10001) vs
+                        read(10001) block2
+                        chbk = check_blocks(block1,block2)
+                        write(*,'(A,3f10.3,5x,3f10.3)') '     begin and end of   vs: ', vs(:,1), vs(:,nnow)
+                        close(10001)
+                elseif(readin_fmt .eq. fmt_ascii) then
+                        call count_line_number(inputfiles(ifile), nnow)
+                        open(unit=10001,file=trim(adjustl(inputfiles(ifile))),action='read')
+                        allocate(xyzs(3,nnow),vs(3,nnow))
+                        do i = 1, nnow
+                                read(10001,*) xyzs(1:3,i), vs(1:3,i)
+                        enddo
+                        close(10001)
+                        ntotal = ntotal + nnow
                 endif
-                nnow = 0;
-                do i = 1, 6
-                        if(headinfo.npart(i).ne.0) then
-                                write(*,'("   In total",i12,A,i3,A,e14.7,A,i12,A)') headinfo.npart(i), ' particles with type ', i, ', mass',&
-                                        headinfo.mass(i),' (',headinfo.nparttotal(i),') in total'
-                                nnow = nnow+headinfo.npart(i)
-                        endif
-                enddo
-                ntotal = ntotal+nnow
 
-                allocate(xyzs(3,nnow),vs(3,nnow))
-
-                read(10001) block1
-                read(10001) xyzs; xyzs=xyzs*xyz_rescale
-                read(10001) block2
-                chbk = check_blocks(block1,block2)
-                write(*,'(A,3f10.3,5x,3f10.3)') '     begin and end of xyzs: ', xyzs(:,1), xyzs(:,nnow)
-
-                read(10001) block1
-                read(10001) vs
-                read(10001) block2
-                chbk = check_blocks(block1,block2)
-                write(*,'(A,3f10.3,5x,3f10.3)') '     begin and end of   vs: ', vs(:,1), vs(:,nnow)
 
                 ! run cic
                 call cic_xyz_vs(xyzs,vs,rhogrid,vxgrid,vygrid,vzgrid,xyzmin,xyzmax,nnow,nc)
 
                 deallocate(xyzs,vs)
                         
-                close(10001)
         enddo
         print * 
         print *, '#########################'
         write(*,*) 'Finishing cic. In total we read-in', ntotal, 'particles in ', nfile, 'files.'
-        if(ntotal.eq.sum(headinfo.nparttotal)) then
-                print *, 'Consistent. ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
-        else
-                print *, ' (WARNING!!!) Inconsistent: ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
-                print *, ' (WARNING!!!) Inconsistent: ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
-                print *, ' (WARNING!!!) Inconsistent: ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
+        if(readin_fmt .eq. fmt_gadget) then
+                if(ntotal.eq.sum(headinfo.nparttotal)) then
+                        print *, 'Consistent. ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
+                else
+                        print *, ' (WARNING!!!) Inconsistent: ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
+                        print *, ' (WARNING!!!) Inconsistent: ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
+                        print *, ' (WARNING!!!) Inconsistent: ntotal, sum(headinfo.nparttotal) = ', ntotal, sum(headinfo.nparttotal)
+                endif
         endif
         do i = 1, 10
                 print *, i, rhogrid(i,i,i)
         enddo
+
+        if(do_rgrid) then
+                allocate(rgrid(nc,nc,nc))
+                call cic_rgrid(rgrid, xyzmin,xyzmax, nc)
+        endif
+
+
         print *, '#########################'
         write(*,*) 'output...'
         if(nsplit.eq.1) then
@@ -261,6 +326,10 @@ implicit none
           write(2003) vygrid
           write(2004) vzgrid
           close(2001); close(2002); close(2003); close(2004)
+          if(do_rgrid)  then
+                open(file=trim(adjustl(outputname))//'.rgrid',unit=2005,form='unformatted',action='write')
+                write(2005) rgrid; close(2005)
+          endif
         else
           n = nc / nsplit
           print *, ' nc, nsplit, n = ', nc, nsplit, n
@@ -282,6 +351,11 @@ implicit none
              write(2003) vygrid(k1:k2,j1:j2,i1:i2)
              write(2004) vzgrid(k1:k2,j1:j2,i1:i2)
              close(2001); close(2002); close(2003); close(2004)
+             if(do_rgrid)  then
+                open(file=trim(adjustl(outputname))//'.ifile'//trim(adjustl(tmpstr1))//'.rgrid',unit=2005,form='unformatted',action='write')
+                write(2005) rgrid(k1:k2,j1:j2,i1:i2)
+                close(2005)
+             endif
            enddo
            enddo
            enddo
