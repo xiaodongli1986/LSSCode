@@ -76,7 +76,7 @@ implicit none
 	character(len=char_len) :: tmpstr1, tmpstr2, tmpstr3, tmpstr4, tmpstr5, inputfilelist, outputfile, printstr, suffix, infofile, outputname, headfile='', inputtypestr, par_random_output_file
         character(len=char_len), allocatable :: inputfiles(:), outputfiles(:)
         integer, parameter:: type_lpicola=0, type_cola = 1, par_random_output_unit = 10000000
-        integer :: i, nbox, nfile, ifile, ibox, ixs(2), iys(2), izs(2), nwrites(3), i1,i2,i3, ix,iy,iz, iwrite, flag, nown, inputtype = type_lpicola, n_par_random_output=0
+        integer :: i, nbox, nfile, ifile, ibox, ixs(2), iys(2), izs(2), nwrites(3), i1,i2,i3, ix,iy,iz, iwrite, flag, nown, inputtype = type_lpicola, n_par_random_output=0, icycle
         real(dl) :: overlap_distance, xyzmin, xyzmax, x,y,z, boxsize,parmass,omegam, redshift,hubble,w,  par_random_output_rat=0.01, tmpx
         real(dl), allocatable :: xyz_ranges(:,:,:)
         logical :: add1, binary_IO = .false., block_write = .true.
@@ -105,12 +105,14 @@ implicit none
         integer *8 :: cola_npar
         integer *8, allocatable :: cola_ids(:)
         real, allocatable :: cola_xyzvs(:,:)
+        integer, parameter :: data_max_len = 100000
 
         type data_arrays
                 integer :: n
                 integer, allocatable :: ids(:)
                 real, allocatable :: xyzs(:,:)
                 real, allocatable :: vxvyvzs(:,:)
+                integer :: ntotal
         end type data_arrays
         type(data_arrays), allocatable :: all_data(:,:,:)
 
@@ -256,7 +258,7 @@ implicit none
 
            !open(unit=par_random_output_unit, file=trim(adjustl(par_random_output_file)), action='write') !par_random_output
                         call random_number(tmpx) !par_random_output
-                        if(tmpx<par_random_output_rat) then
+                        if(tmpx<par_random_output_rat .and. x>0 .and. y>0 .and. z>0) then
                                 write(par_random_output_unit,'(A)')  trim(adjustl(tmpstr1)) !par_random_output
                                 n_par_random_output = n_par_random_output + 1
                         endif
@@ -340,7 +342,7 @@ implicit none
                                         x=tmp_xyzvs(1,i); y=tmp_xyzvs(2,i); z=tmp_xyzvs(3,i); 
 
                                         call random_number(tmpx) !par_random_output
-                                        if(tmpx<par_random_output_rat) then
+                                        if(tmpx<par_random_output_rat .and. x>0 .and. y>0 .and. z>0) then
                                                 write(par_random_output_unit)  tmp_xyzvs(:,i)
                                                 n_par_random_output = n_par_random_output + 1
                                         endif
@@ -370,7 +372,7 @@ implicit none
                         x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
 
                         call random_number(tmpx) !par_random_output
-                        if(tmpx<par_random_output_rat) then
+                        if(tmpx<par_random_output_rat .and. x>0 .and. y>0 .and. z>0) then
                                 write(par_random_output_unit)  cola_xyzvs(:,i)
                                 n_par_random_output = n_par_random_output + 1
                         endif
@@ -394,93 +396,10 @@ implicit none
            write(*,'(A,i15,A,i8,A)') ' Finishing count-line. In total we have ', ntotal, ' particles in ', nfile, ' files.'
            write(*,'(A,i15,A,A)') ' Finishing particle output (stage 1). In total we have ', n_par_random_output, ' particles write to ', trim(adjustl(par_random_output_file))
 
-           ! write everything once-for-all
-           if(block_write)then
-             allocate(all_data(nbox,nbox,nbox))
-             do i1 = 1,nbox; do i2=1,nbox; do i3=1,nbox
-                        all_data(i1,i2,i3).n = 0
-                        allocate(all_data(i1,i2,i3).ids(iwrite_counts(i1,i2,i3)))
-                        allocate(all_data(i1,i2,i3).xyzs(3,iwrite_counts(i1,i2,i3)))
-                        allocate(all_data(i1,i2,i3).vxvyvzs(3,iwrite_counts(i1,i2,i3)))
-             enddo; enddo; enddo
-             ! x,y,z,vx,vy,vz info written to all_data storage
-             ntotal=0
-             do ifile = 1, nfile
-                write(*,'(A,A,A,"(",i4," of",i4,")")') '     opening ', trim(adjustl(inputfiles(ifile))), ' for block read-in...', ifile, nfile
-                if(inputtype.eq.type_lpicola) then
-                  nowunit = nbox*nbox*nbox+100000
-                  open(unit=nowunit, file=trim(adjustl(inputfiles(ifile))), action='read',form='unformatted')
-                  do
-                        read(nowunit,IOSTAT=EOF) block1
-                        if(EOF.gt.0) then
-                                print*, 'Read error in file: ', trim(adjustl(inputfiles(ifile)))
-                                print*, 'Exiting program'
-                        else if (EOF .lt. 0) then
-                               ! If EOF < 0 then we have read all the chunks
-                                exit
-                        else
-                                allocate(tmp_xyzvs(6,block1)); read(nowunit) tmp_xyzvs;
-                                do i = 1, block1
-                                        x=tmp_xyzvs(1,i); y=tmp_xyzvs(2,i); z=tmp_xyzvs(3,i); 
-                                        call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
-                                        if(flag.eq.0) cycle
-                                        do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
-                                                ix = ixs(i1); iy = iys(i2); iz = izs(i3)
-                                                all_data(ix,iy,iz).n = all_data(ix,iy,iz).n + 1; nown = all_data(ix,iy,iz).n 
-                                                all_data(ix,iy,iz).xyzs(1:3,nown) = tmp_xyzvs(1:3,i)
-                                                all_data(ix,iy,iz).vxvyvzs(1:3,nown) = tmp_xyzvs(4:6,i)
-                                                all_data(ix,iy,iz).ids(nown) = ntotal+i
-                                                !iwrite_counts(ix,iy,iz) = iwrite_counts(ix,iy,iz) + 1
-                                                !iwrite = (ix-1)*nbox*nbox + (iy-1)*nbox + iz + 200000
-                                                !write(iwrite, '(A)') trim(adjustl(tmpstr1))
-                                        enddo; enddo; enddo
-                                enddo
-                                deallocate(tmp_xyzvs)
-                                ntotal  = ntotal + block1
-                        endif
-                  enddo
-                  close(nowunit)
-               elseif(inputtype.eq.type_cola) then
-                 call read_in_colanpar(inputfiles(ifile), cola_npar)
-                 if(cola_npar.eq.0) then
-                        print *, 'cycle because of npar =0: ', cola_npar; cycle
-                 endif
-                 allocate(cola_ids(cola_npar), cola_xyzvs(6,cola_npar))
-                 call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
-                 do i = 1, cola_npar
-                        x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
-                        call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
-                        if(flag.eq.0) cycle
-                        do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
-                                        ix = ixs(i1); iy = iys(i2); iz = izs(i3)
-                                        all_data(ix,iy,iz).n = all_data(ix,iy,iz).n + 1; nown = all_data(ix,iy,iz).n 
-                                        all_data(ix,iy,iz).xyzs(1:3,nown) = cola_xyzvs(1:3,i)
-                                        all_data(ix,iy,iz).vxvyvzs(1:3,nown) = cola_xyzvs(4:6,i)
-                                        all_data(ix,iy,iz).ids(nown) = ntotal+i
-                        enddo; enddo; enddo
-                        ntotal  = ntotal + cola_npar
-                 enddo
-                 deallocate(cola_ids, cola_xyzvs)
-                 ! need to store cola particles to this structure!!! all_data...
-                 ! need to : generate headfile for cola;; and run for test... 
-                 ! need to read this code carefully...
-                 ! need to add inputs to cola_halo; 
-               endif
-
-
-             enddo
-
-             do i1 = 1,nbox; do i2=1,nbox; do i3=1,nbox
-                        write(*,'(A,i3,i3,i3, A,i10,i10,A,i10,i10)') '  Finishing all_data storage: i1,i2,i3 = ', i1,i2,i3, '; #-par, iwrite(i1,i2,i3) = ', all_data(i1,i2,i3).n, iwrite_counts(i1,i2,i3), '; check difference (should be zero): ', all_data(i1,i2,i3).n - iwrite_counts(i1,i2,i3) 
-             enddo; enddo; enddo
-           endif
-
            do ibox = 1, nbox*nbox*nbox
                write(*,'(5x, A)') trim(adjustl(outputfiles(ibox)))
                open(unit=ibox+200000, file = trim(adjustl(outputfiles(ibox))), action='write', access='stream', form='binary')
            enddo
-
-
            !#############################################################
            ! write head to files
            headinfo.npart = 0; headinfo.npart(2) = ntotal
@@ -508,22 +427,142 @@ implicit none
                 write(iwrite) 256
                 write(iwrite) iwrite_counts(i1,i2,i3)*3*4
            enddo; enddo; enddo
-           if(block_write) then
-                write(*,'(A)') ' * writing x,y,z, vx,vy,vz (block_write mode)... '
-                do i1=1,nbox; do i2=1,nbox; do i3=1,nbox
+
+           ! write everything once-for-all
+           if(block_write)then
+             allocate(all_data(nbox,nbox,nbox))
+             do i1 = 1,nbox; do i2=1,nbox; do i3=1,nbox
+                        all_data(i1,i2,i3).n = 0
+                        all_data(i1,i2,i3).ntotal = 0
+                        !allocate(all_data(i1,i2,i3).ids(iwrite_counts(i1,i2,i3)))
+                        !allocate(all_data(i1,i2,i3).xyzs(3,iwrite_counts(i1,i2,i3)))
+                        !allocate(all_data(i1,i2,i3).vxvyvzs(3,iwrite_counts(i1,i2,i3)))
+                        allocate(all_data(i1,i2,i3).ids(data_max_len))
+                        allocate(all_data(i1,i2,i3).xyzs(3,data_max_len))
+                        allocate(all_data(i1,i2,i3).vxvyvzs(3,data_max_len))
+             enddo; enddo; enddo
+             ! x,y,z,vx,vy,vz info written to all_data storage
+             ! icycle == 1: write xyz; icycle==2: write v; icycle==3: write id
+             do icycle = 1, 3 !doicycle
+              write(*,*) "  block write start!!!: icycle = ", icycle
+              write(*,*) "  block write start!!!: icycle = ", icycle
+              write(*,*) "  block write start!!!: icycle = ", icycle
+              ntotal=0
+              do ifile = 1, nfile !doifile
+                write(*,'(A,A,A,"(",i4," of",i4,")")') '     opening ', trim(adjustl(inputfiles(ifile))), ' for block read-in...', ifile, nfile
+                if(inputtype.eq.type_lpicola) then
+                  nowunit = nbox*nbox*nbox+100000
+                  open(unit=nowunit, file=trim(adjustl(inputfiles(ifile))), action='read',form='unformatted')
+                  do
+                        read(nowunit,IOSTAT=EOF) block1
+                        if(EOF.gt.0) then
+                                print*, 'Read error in file: ', trim(adjustl(inputfiles(ifile)))
+                                print*, 'Exiting program'
+                        else if (EOF .lt. 0) then
+                               ! If EOF < 0 then we have read all the chunks
+                                exit
+                        else
+                                allocate(tmp_xyzvs(6,block1)); read(nowunit) tmp_xyzvs;
+                                do i = 1, block1
+                                        x=tmp_xyzvs(1,i); y=tmp_xyzvs(2,i); z=tmp_xyzvs(3,i); 
+                                        call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
+                                        if(flag.eq.0) cycle
+                                        do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
+                                                ix = ixs(i1); iy = iys(i2); iz = izs(i3)
+                                                all_data(ix,iy,iz).n = all_data(ix,iy,iz).n + 1; nown = all_data(ix,iy,iz).n 
+                                                all_data(ix,iy,iz).ntotal = all_data(ix,iy,iz).ntotal + 1
+                                                all_data(ix,iy,iz).xyzs(1:3,nown) = tmp_xyzvs(1:3,i)
+                                                all_data(ix,iy,iz).vxvyvzs(1:3,nown) = tmp_xyzvs(4:6,i)
+                                                all_data(ix,iy,iz).ids(nown) = ntotal+i
+                                                if(all_data(ix,iy,iz).n .eq. data_max_len) then
+                                                        iwrite = (ix-1)*nbox*nbox + (iy-1)*nbox + iz + 200000
+                                                        if(icycle.eq.1) then
+                                                                write(iwrite) all_data(ix,iy,iz).xyzs
+                                                        elseif(icycle.eq.2) then
+                                                                write(iwrite) all_data(ix,iy,iz).vxvyvzs
+                                                        elseif(icycle.eq.3) then
+                                                                write(iwrite) all_data(ix,iy,iz).ids
+                                                        endif
+                                                        all_data(ix,iy,iz).n = 0
+                                                endif
+                                        enddo; enddo; enddo
+                                enddo
+                                deallocate(tmp_xyzvs)
+                                ntotal  = ntotal + block1
+                        endif
+                  enddo
+                  close(nowunit)
+               elseif(inputtype.eq.type_cola) then
+                 call read_in_colanpar(inputfiles(ifile), cola_npar)
+                 if(cola_npar.eq.0) then
+                        print *, 'cycle because of npar =0: ', cola_npar; cycle
+                 endif
+                 allocate(cola_ids(cola_npar), cola_xyzvs(6,cola_npar))
+                 call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
+                 do i = 1, cola_npar
+                        x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
+                        call determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
+                        if(flag.eq.0) cycle
+                        do i1 = 1, nwrites(1); do i2 = 1, nwrites(2); do i3 = 1, nwrites(3)
+                                        ix = ixs(i1); iy = iys(i2); iz = izs(i3)
+                                        all_data(ix,iy,iz).n = all_data(ix,iy,iz).n + 1; nown = all_data(ix,iy,iz).n 
+                                        all_data(ix,iy,iz).ntotal = all_data(ix,iy,iz).ntotal + 1
+                                        all_data(ix,iy,iz).xyzs(1:3,nown) = cola_xyzvs(1:3,i)
+                                        all_data(ix,iy,iz).vxvyvzs(1:3,nown) = cola_xyzvs(4:6,i)
+                                        all_data(ix,iy,iz).ids(nown) = ntotal+i
+                                        if(all_data(ix,iy,iz).n .eq. data_max_len) then
+                                                        iwrite = (ix-1)*nbox*nbox + (iy-1)*nbox + iz + 200000
+                                                        if(icycle.eq.1) then
+                                                                write(iwrite) all_data(ix,iy,iz).xyzs
+                                                        elseif(icycle.eq.2) then
+                                                                write(iwrite) all_data(ix,iy,iz).vxvyvzs
+                                                        elseif(icycle.eq.3) then
+                                                                write(iwrite) all_data(ix,iy,iz).ids
+                                                        endif
+                                                        all_data(ix,iy,iz).n = 0
+                                        endif
+                        enddo; enddo; enddo
+                        ntotal  = ntotal + cola_npar
+                 enddo
+                 deallocate(cola_ids, cola_xyzvs)
+                 ! need to store cola particles to this structure!!! all_data...
+                 ! need to : generate headfile for cola;; and run for test... 
+                 ! need to read this code carefully...
+                 ! need to add inputs to cola_halo; 
+               endif
+
+              enddo !enddoifile
+
+              ! write residual particles in all_data
+              do i1=1,nbox; do i2=1,nbox; do i3=1,nbox
+                        ix=i1; iy=i2; iz=i3;
                         iwrite = (i1-1)*nbox*nbox + (i2-1)*nbox + i3 + 200000
-                        write(*,'(A,A)') ' ** writing to file ', trim(adjustl(outputfiles(iwrite-200000)))
-                        write(iwrite) all_data(i1,i2,i3).xyzs
-                        write(iwrite) iwrite_counts(i1,i2,i3)*3*4
-                        write(iwrite) iwrite_counts(i1,i2,i3)*3*4
-                        write(iwrite) all_data(i1,i2,i3).vxvyvzs
-                        write(iwrite) iwrite_counts(i1,i2,i3)*3*4
-                        write(iwrite) iwrite_counts(i1,i2,i3)*4
-                        write(iwrite) all_data(i1,i2,i3).ids
-                        write(iwrite) iwrite_counts(i1,i2,i3)*4
-                        close(iwrite)
-                enddo; enddo; enddo
-                stop
+                        if(icycle.eq.1) then
+                          if(all_data(ix,iy,iz).n > 0) write(iwrite) all_data(ix,iy,iz).xyzs(:,1:all_data(ix,iy,iz).n)
+                          write(iwrite) iwrite_counts(i1,i2,i3)*3*4
+                          write(iwrite) iwrite_counts(i1,i2,i3)*3*4
+                        elseif(icycle.eq.2) then
+                          if(all_data(ix,iy,iz).n > 0) write(iwrite) all_data(ix,iy,iz).vxvyvzs(:,1:all_data(ix,iy,iz).n)
+                          write(iwrite) iwrite_counts(i1,i2,i3)*3*4
+                          write(iwrite) iwrite_counts(i1,i2,i3)*4
+                        else
+                          if(all_data(ix,iy,iz).n > 0) write(iwrite) all_data(ix,iy,iz).ids(1:all_data(ix,iy,iz).n)
+                          write(iwrite) iwrite_counts(i1,i2,i3)*4
+                          close(iwrite)
+                        endif
+                        all_data(ix,iy,iz).n = 0 ! set as zero, be ready for next time output
+              enddo; enddo; enddo
+
+             enddo !endodicycle
+             do i1 = 1,nbox; do i2=1,nbox; do i3=1,nbox
+                        write(*,'(A,i3,i3,i3, A,i10,i10,A,i10,i10)') '  Finishing all_data storage: i1,i2,i3 = ', i1,i2,i3, '; #-par, iwrite(i1,i2,i3) = ', all_data(i1,i2,i3).ntotal/3, iwrite_counts(i1,i2,i3), '; check difference (should be zero): ', all_data(i1,i2,i3).ntotal - iwrite_counts(i1,i2,i3)*3
+             enddo; enddo; enddo
+           endif
+
+
+
+           if(block_write) then
+                goto 200 !stop
            endif
 
            !#############################################################
@@ -652,7 +691,7 @@ implicit none
         enddo
 
         ! output particles
-        allocate(tmp_xyzvs(7,n_par_random_output))
+200     allocate(tmp_xyzvs(7,n_par_random_output))
         open(unit=par_random_output_unit,file=trim(adjustl(par_random_output_file)),action='read', access='stream',form='binary')
         read(par_random_output_unit) tmp_xyzvs(1:6,:)
         tmp_xyzvs(7,:) = 1.0
@@ -671,8 +710,8 @@ implicit none
         write(par_random_output_unit) tmpdoubles
 
         write(*,*)
-        write(*,'(i15,A,i15,A,f12.6)') n_par_random_output, ' particles selected from ', ntotal, '       rat = ', real(n_par_random_output)/real(ntotal)
-        write(*,'(A)') '   staring write particles. format = block+[x,y,z,vx,vy,vz,1.0]*noutput+block ...'
+        write(*,'(i15,A)') n_par_random_output, ' particles selected for output ...'
+        write(*,'(A)') '   staring write particles to '//trim(adjustl(par_random_output_file))//'  format = block+[x,y,z,vx,vy,vz,1.0]*noutput+block ...'
         write(par_random_output_unit) tmp_xyzvs(1:7,:)
         close(par_random_output_unit)
 

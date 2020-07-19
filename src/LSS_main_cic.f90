@@ -172,7 +172,7 @@ implicit none
 		elseif(trim(adjustl(tmpstr1)).eq.'-xyzmax') then
 			read(tmpstr2,*) xyzmax
 		elseif(trim(adjustl(tmpstr1)).eq.'-output') then
-			read(tmpstr2,*) outputname
+			read(tmpstr2,'(A)') outputname
 		elseif(trim(adjustl(tmpstr1)).eq.'-xyz_rescale') then
 			read(tmpstr2,*) xyz_rescale
 		elseif(trim(adjustl(tmpstr1)).eq.'-nsplit') then
