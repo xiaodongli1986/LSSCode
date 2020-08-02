@@ -1,6 +1,16 @@
 module lightcone_boxsplit_tools
 use LSS_cosmo_funs
 implicit none
+        !gadget head
+        type head
+                integer :: npart(6)
+                double precision :: mass(6)
+                double precision :: time
+                double precision :: redshift
+                integer :: flag_sfr, flag_feedback, npartTotal(6), flag_cooling, num_files
+                double precision :: BoxSize, Omega0, OmegaLambda, HubbleParam;
+                integer :: fill(24)
+        end type head
 contains
 
         subroutine determine_iwrites(x, y, z, overlap_distance, xyzmin, xyzmax, nwrites, ixs, iys, izs, nbox, flag)
@@ -27,11 +37,22 @@ contains
         end subroutine determine_iwrites
 
 
+        subroutine read_in_gadget_npar(filename, npar)
+                character(len=char_len) :: filename
+                integer *8 :: npar
+                type(head) :: head_info
+                open(file=trim(adjustl(filename)), unit=1000,action='read', form='unformatted')
+                read(1000) head_info
+                npar = head_info.npart(2)
+        end subroutine read_in_gadget_npar
+
        	subroutine read_in_colanpar(filename, npar)
                 character(len=char_len) :: filename, filenamenpar
                 integer *8 :: npar
                 filenamenpar = trim(adjustl(filename))//".npar"
                 open(file=trim(adjustl(filenamenpar)),unit=1000,action='read',form='binary',access='stream'); read(1000) npar; close(1000)
+                print*, 'inputfile.npar is: ', npar, trim(adjustl(filenamenpar))
+                !print*, 'npar is: ', npar
         end subroutine read_in_colanpar
 
 	subroutine read_in_coladata_slow(filename, npar, rmid, ids, xyzvs)
@@ -39,15 +60,16 @@ contains
                 integer *8 :: npar,  ids(npar), i 
                 real :: xyzvs(6,npar), rmid
 
-                open(file=trim(adjustl(filename)),unit=1001, action='read', form='binary', access='stream')
-                read(1001) rmid
+                open(file=trim(adjustl(filename)),unit=100000001, action='read', form='binary', access='stream')
+                read(100000001) rmid
                 do i =1, npar
-                        read(1001) ids(i); read(1001) xyzvs(1:6,i)
+                        read(100000001) ids(i); read(100000001) xyzvs(1:6,i)
                 enddo
-                !write(*, '(A,f12.3)')       '   read-in rmid = ', rmid1
-                !write(*, '(A,i15,i15)')     '   ids1 begin/end with ' , ids1(1), ids1(npar1)
-                !write(*, '(A,6(f12.3))')    '   xyzvs1 begin with ', xyzvs1(:,1)
-                !write(*, '(A,6(f12.3))')    '   xyzvs1  end  with ', xyzvs1(:,npar1)
+                close(100000001) 
+                !write(*, '(A,f12.3)')       '   read-in rmid = ', rmid
+                !write(*, '(A,i15,i15)')     '   ids1 begin/end with ' , ids(1), ids(npar)
+                !write(*, '(A,6(f12.3))')    '   xyzvs1 begin with ', xyzvs(:,1)
+                !write(*, '(A,6(f12.3))')    '   xyzvs1  end  with ', xyzvs(:,npar)
 	end subroutine read_in_coladata_slow
 
 	subroutine read_in_coladata(filename, npar, rmid, ids, xyzvs)
@@ -55,10 +77,18 @@ contains
                 integer *8 :: npar,  ids(npar), i
                 real :: xyzvs(6,npar), id_xyzvs(8,npar), rmid
 
+                !print *, ' TEST BEGIN of read_in_coladata'
+
                 open(file=trim(adjustl(filename)),unit=1001, action='read', form='binary', access='stream')
                 read(1001) rmid
+                !print *, 'TEST read in rmin = ', rmid
                 read(1001) id_xyzvs ! cheat: read-in integer*8 as two real numbers ! since we do not use ids, it is OK
                 xyzvs = id_xyzvs(3:8,:)
+                write(*, '(A,f12.3)')       '   read-in rmid = ', rmid
+                !write(*, '(A,6(f12.4))')    '   xyzvs begin with ', xyzvs(:,220:240)
+                write(*, '(A,6(f12.3))')    '   xyzvs  end  with ', xyzvs(:,npar)
+                close(1001)
+                !print *, ' TEST END  of read_in_coladata'
         end subroutine read_in_coladata
 
 end module lightcone_boxsplit_tools
@@ -75,7 +105,7 @@ implicit none
 
 	character(len=char_len) :: tmpstr1, tmpstr2, tmpstr3, tmpstr4, tmpstr5, inputfilelist, outputfile, printstr, suffix, infofile, outputname, headfile='', inputtypestr, par_random_output_file
         character(len=char_len), allocatable :: inputfiles(:), outputfiles(:)
-        integer, parameter:: type_lpicola=0, type_cola = 1, par_random_output_unit = 10000000
+        integer, parameter:: type_lpicola=0, type_cola = 1, type_gadget = 2, par_random_output_unit = 10000000
         integer :: i, nbox, nfile, ifile, ibox, ixs(2), iys(2), izs(2), nwrites(3), i1,i2,i3, ix,iy,iz, iwrite, flag, nown, inputtype = type_lpicola, n_par_random_output=0, icycle
         real(dl) :: overlap_distance, xyzmin, xyzmax, x,y,z, boxsize,parmass,omegam, redshift,hubble,w,  par_random_output_rat=0.01, tmpx
         real(dl), allocatable :: xyz_ranges(:,:,:)
@@ -83,16 +113,6 @@ implicit none
         double precision :: tmpdoubles(64)
 
 
-        !gadget head
-        type head
-                integer :: npart(6)
-                double precision :: mass(6)
-                double precision :: time
-                double precision :: redshift
-                integer :: flag_sfr, flag_feedback, npartTotal(6), flag_cooling, num_files
-                double precision :: BoxSize, Omega0, OmegaLambda, HubbleParam;
-                integer :: fill(24)
-        end type head
         type(head) :: headinfo
 
         integer*4 :: EOF, block1, nowunit
@@ -179,6 +199,9 @@ implicit none
                 open(unit=10002,file=headfile,action='read')
                 read(10002,*) tmpstr1
                 read(10002,*) ntotal, boxsize, parmass, redshift, omegam, hubble, w;
+                !write(*, '(A,f12.3)')       '   read-in omegam = ', omegam
+                !write(*, '(A,f12.3)')       '   read-in hubble = ', hubble
+                !write(*, '(A,f12.3)')       '   read-in ntotal = ', ntotal
                 if(w.ge.-0.001) then
                         print *, '   set w as -1 (found w = ',w,')'
                         w = -1.
@@ -198,6 +221,9 @@ implicit none
         elseif(trim(adjustl(inputtypestr)).eq.'cola') then
                 inputtype = type_cola
                 write(*,'(A,A)') ' set inputtype as cola: inputtypestr= ', trim(adjustl(inputtypestr))
+        elseif(trim(adjustl(inputtypestr)).eq.'gadget') then
+                inputtype = type_gadget
+                write(*,'(A,A)') ' set inputtype as gadget: inputtypestr= ', trim(adjustl(inputtypestr))
         else
                 inputtype = type_lpicola
                 write(*,'(A,A)') ' set inputtype as lpicola: inputtypestr= ', trim(adjustl(inputtypestr))
@@ -363,11 +389,15 @@ implicit none
                 close(nowunit)
              elseif(inputtype .eq. type_cola) then
                 call read_in_colanpar(inputfiles(ifile), cola_npar)
+                !print*, 'input_file is', inputfiles(ifile)
                 if(cola_npar.eq.0) then
                         print *, '             cycle because of npar =0: ', int(cola_npar); cycle
                 endif
+                !print *, 'TEST A'
                 allocate(cola_ids(cola_npar), cola_xyzvs(6,cola_npar))
                 call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
+                !stop !! maqlin debug
+                print*, 'cola_npar is', cola_npar
                 do i = 1, cola_npar
                         x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
 
@@ -386,7 +416,8 @@ implicit none
                                 !write(iwrite, '(A)') trim(adjustl(tmpstr1))
                         enddo; enddo; enddo
                 enddo
-                deallocate(cola_ids, cola_xyzvs)
+                deallocate(cola_ids, cola_xyzvs) ! maqlin debug
+                !print *, 'TEST B'
                 ntotal  = ntotal + cola_npar
              endif
            enddo
@@ -497,7 +528,10 @@ implicit none
                  if(cola_npar.eq.0) then
                         print *, 'cycle because of npar =0: ', cola_npar; cycle
                  endif
+                 !print*, '#####################################'
                  allocate(cola_ids(cola_npar), cola_xyzvs(6,cola_npar))
+                 !print*, 'cola_npar is :', cola_npar ! maqlin debug
+                 !print *, 'TEST C'
                  call read_in_coladata(inputfiles(ifile), cola_npar, cola_rmid, cola_ids, cola_xyzvs)
                  do i = 1, cola_npar
                         x=cola_xyzvs(1,i); y=cola_xyzvs(2,i); z=cola_xyzvs(3,i)
@@ -529,6 +563,7 @@ implicit none
                  ! need to : generate headfile for cola;; and run for test... 
                  ! need to read this code carefully...
                  ! need to add inputs to cola_halo; 
+                 !print *, 'TEST D'
                endif
 
               enddo !enddoifile
@@ -607,6 +642,7 @@ implicit none
 
            !#############################################################
            ! write vx,vy,vz to files
+           print*, '##########################################'
            write(*,'(A)') ' * writing vx,vy,vz (one-by-one mode)... '
            ntotal=0
            do ifile = 1, nfile
