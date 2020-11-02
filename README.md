@@ -6,7 +6,7 @@ A collection of Xiao-Dong's large scale structure codes
 
 ifort is required.
 
-	cd src 
+	cd src
 	make nompi # compile those do not requiring mpi
 	make all # compile all programe
 
