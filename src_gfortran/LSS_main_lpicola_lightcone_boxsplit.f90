@@ -134,7 +134,7 @@ implicit none
         integer *8 :: cola_npar
         integer *8, allocatable :: cola_ids(:)
         real, allocatable :: cola_xyzvs(:,:)
-        integer, parameter :: data_max_len = 100000
+        integer, parameter :: data_max_len = 3000000
 
         type data_arrays
                 integer :: n
