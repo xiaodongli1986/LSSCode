@@ -178,7 +178,7 @@ implicit none
 		elseif(trim(adjustl(tmpstr1)).eq."-outputname") then
 			read(tmpstr2,"(A)") outputname
 		elseif(trim(adjustl(tmpstr1)).eq."-nbox") then
-                        print *, 'now read in nbox... tmpstr2 = ', trim(adjustl(tmpstr2))
+            print *, 'now read in nbox... tmpstr2 = ', trim(adjustl(tmpstr2))
 			read(tmpstr2,*) nbox
 		elseif(trim(adjustl(tmpstr1)).eq."-overlap_distance") then
 			read(tmpstr2,*) overlap_distance
