@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/home/ubuntu/archiconda3/bin/python
 import sys
-import commands
+#import commands
 import os
 
 def str_to_numbers(str1,exitcode='#', do_float_conver=True):
@@ -28,27 +28,28 @@ def str_to_numbers(str1,exitcode='#', do_float_conver=True):
     return floatlist
 
 ### Declare the function of this code
-print 
-print 'Add a new main programe to the LSS codes...'
-print 'Usage: EXE Name-of-the-main-program mpi/nompi'
-print
+print('')
+print('Add a new main programe to the LSS codes...')
+print('Usage: EXE Name-of-the-main-program mpi/nompi')
+print('')
 
 cmdargs = sys.argv
 if len(cmdargs) != 3:
-	print 'Error: len(cmdargs) = ', len(cmdargs)
+	print('Error: len(cmdargs) = ', len(cmdargs))
 	sys.exit()
 nowEXEname = cmdargs[1]
 mpi = cmdargs[2]
 if mpi != 'mpi' and mpi != 'nompi':
-	print 'Error: mpi must be mpi or nompi!: ', mpi
+	print('Error: mpi must be mpi or nompi!: ', mpi)
 	sys.exit()
 
 
-print
-print 'We will add a new EXE named as  ', nowEXEname
+print('')
+print('We will add a new EXE named as  ', nowEXEname)
 
 ### Make a save of the Makefile
-output = commands.getoutput('ls')
+#output = commands.getoutput('ls')
+output = os.popen('ls').read()
 output = str_to_numbers(output, do_float_conver = False)
 MFs = []
 MFIs = [-1]
@@ -58,7 +59,7 @@ for MF in output:
 		MFIs.append(int(MF[13:len(MF)]))
 saveindex = max(MFIs) + 1
 tmpstr = 'Makefile.SAVE'+str(saveindex)
-print 'Copy of old Makefile saved to :', tmpstr
+print('Copy of old Makefile saved to :', tmpstr)
 os.system('cp Makefile '+tmpstr)
 file1 = tmpstr
 os.system('rm Makefile')
@@ -82,7 +83,7 @@ while True:
 		continue
 	elif now_str_array[0] == 'OBJS':
 		lastEXE = prev_str_array[0]
-		print lastEXE
+		print(lastEXE)
 		lastEXEi = int(lastEXE[3:len(lastEXE)])
 		nowEXEi = lastEXEi + 1
 		nowEXE = 'EXE'+str(nowEXEi)
@@ -134,5 +135,5 @@ nowf3.write('\n\t\t\tread(tmpstr2,"(A)") outputfile\n\t\telse\n\t\t\tprint *, "U
 nowf3.write('\n\n\tif(trim(adjustl(outputfile)).eq."") then\n\t\t\n\tendif\n\n\tprint *, \'This is an empty program '+nowEXEname+'!!\'\n\nend program')
 nowf3.close()
 
-print '\nNew file created: ', 'LSS_main_'+nowEXEname+'.f90\n\n'
+print('\nNew file created: ', 'LSS_main_'+nowEXEname+'.f90\n\n')
 
