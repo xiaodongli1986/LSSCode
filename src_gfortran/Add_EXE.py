@@ -1,3 +1,4 @@
+#!/software/anaconda3/bin/python
 #!/home/ubuntu/archiconda3/bin/python
 import sys
 #import commands

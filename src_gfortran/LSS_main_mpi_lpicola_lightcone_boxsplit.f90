@@ -222,7 +222,7 @@ implicit none
                 endif
                 close(10002)
         endif
-
+        print *, nbox, xyzmin, xyzmax
         write(tmpstr2,*) nbox
         write(tmpstr3,'(f10.1)') overlap_distance
         write(tmpstr4,'(f10.1)') xyzmin

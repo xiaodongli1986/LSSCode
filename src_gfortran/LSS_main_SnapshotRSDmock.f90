@@ -8,7 +8,7 @@ use LSS_cosmo_funs
 implicit none
 
 	real(dl) :: xyzmin,xyzmax,dxyz, redshift,omegam,w,dist,boxdistance, x,y,z,vx,vy,vz,vr,&
-	        costheta, xmin,xmax,ymin,ymax,zmin,zmax, tmp(1000), &
+	        costheta, xmin,xmax,ymin,ymax,zmin,zmax, tmp(1000), tmp_output(1000), &
 		zobs, shiftdist,shiftrat, shiftedcord, volscale, voldft, volnow, rescalefac
 	integer :: xcol,ycol,zcol,vxcol,vycol,vzcol,maxcol, i,j, numshiftback, numshiftbackorig, skiprow
 	integer(8) :: numarg, nlines
@@ -21,7 +21,7 @@ implicit none
 		'-xyzmax xyzmax -xcol xcol -ycol ycol -zcol zcol '//&
 		'-vxcol vxcol -vycol vycol -vzcol vzcol -redshift redshift '//&
 		'-omegam omegam -w w -shiftx shiftx -shifty shifty -shiftz shiftz -shiftr shiftr'//&
-		'-skiprow skiprow -suffix suffix -dovoleff dovoleff -add1w add1w '//&
+		'-skiprow skiprow -suffix suffix -dovoleff dovoleff -add1w add1w -maxcol maxcol'//&
 		'### xyzmin/xyzmax used to do periodical boundary '//&
 		'condition (shift inside to box if shifted outside by RSD); '//&
 		'please tell cosmology of the simulation, redshift of the snapshot; '//&
@@ -33,9 +33,10 @@ implicit none
 	xcol=1; ycol=2; zcol=3; vxcol=4; vycol=5; vzcol=6; skiprow=0
 	shiftx = .true.; shifty=.false.; shiftz=.false.; shiftr=.false.;
 	omegam = 0.26; w = -1.0; redshift = 0.0
+    maxcol = 0
 	suffix = ''
 	dovoleff = .false.
-        add1w = .true.
+    add1w = .true.
 	
 	numarg = iargc()
 	if(numarg.le.1) then
@@ -87,6 +88,8 @@ implicit none
 			read(tmpstr2,*) dovoleff
 		elseif(trim(adjustl(tmpstr1)).eq.'-add1w') then
 			read(tmpstr2,*) add1w
+		elseif(trim(adjustl(tmpstr1)).eq.'-maxcol') then
+			read(tmpstr2,*) maxcol
 		else
 			print *, 'Unkown argument: ', trim(adjustl(tmpstr1))
 			write(*,'(A)') trim(adjustl(printstr))
@@ -99,7 +102,9 @@ implicit none
 		stop
 	endif
 
-	maxcol = max(xcol,ycol,zcol,vxcol,vycol,vzcol)
+    if(maxcol .eq. 0) then
+	   maxcol = max(xcol,ycol,zcol,vxcol,vycol,vzcol)
+    endif
 	if(maxcol>size(tmp)) then
 		print *, 'Overflow: increase size of tmp!'
 		print *, '  maxcol, size(tmp) = ', maxcol, size(tmp)
@@ -185,6 +190,7 @@ implicit none
 	enddo
 	do while(.true.)
 		read(1,*,end=101) tmp(1:maxcol)
+        tmp_output(1:maxcol) = tmp(1:maxcol)
 		nlines = nlines+1
 		x=tmp(xcol); y=tmp(ycol); z=tmp(zcol); 
 		vx=tmp(vxcol); vy=tmp(vycol); vz=tmp(vzcol); 
@@ -229,11 +235,16 @@ implicit none
 				shiftedcord = shiftedcord - dxyz
 				numshiftback = numshiftback+1
 			endif
-                        if (.not. add1w) then
-			        write(10,'(3e15.7)') shiftedcord, y, z
-                        else
-			        write(10,'(3e15.7," 1")') shiftedcord, y, z
-                        endif
+
+            tmp_output(xcol) = shiftedcord; tmp_output(ycol) = y; tmp_output(zcol) = z
+
+            if (.not. add1w) then
+			        !write(10,'(3e15.7)') shiftedcord, y, z
+			        write(10,format_string(maxcol, '(e15.7)')) tmp_output(1:maxcol)
+            else
+			        !write(10,'(3e15.7," 1")') shiftedcord, y, z
+			        write(10,format_string(maxcol+1, '(e15.7)')) tmp_output(1:maxcol), 1.
+            endif
 
 		endif
 		if(shifty) then
@@ -248,11 +259,15 @@ implicit none
 				shiftedcord = shiftedcord - dxyz
 				numshiftback = numshiftback+1
 			endif
-                        if (.not. add1w) then
-			        write(20,'(3e15.7)') x, shiftedcord, z
-                        else
-			        write(20,'(3e15.7," 1")') x, shiftedcord, z
-                        endif
+            tmp_output(xcol) = x; tmp_output(ycol) = shiftedcord; tmp_output(zcol) = z
+            if (.not. add1w) then
+			!        write(20,'(3e15.7)') x, shiftedcord, z
+			        write(20,format_string(maxcol, '(e15.7)')) tmp_output(1:maxcol)
+            else
+			!        write(20,'(3e15.7," 1")') x, shiftedcord, z
+			        write(20,format_string(maxcol+1, '(e15.7)')) tmp_output(1:maxcol), 1.
+            endif
+
 		endif
 		if(shiftz) then
 			zobs = redshift + vz * (1.0_dl+redshift) / const_c 
@@ -266,11 +281,18 @@ implicit none
 				shiftedcord = shiftedcord - dxyz
 				numshiftback = numshiftback+1
 			endif
-                        if (.not. add1w) then
-			        write(30,'(3e15.7)') x, y, shiftedcord
-                        else
-			        write(30,'(3e15.7," 1")') x, y, shiftedcord
-                        endif
+           !             if (.not. add1w) then
+		!	        write(30,'(3e15.7)') x, y, shiftedcord
+         !               else
+		!	        write(30,'(3e15.7," 1")') x, y, shiftedcord
+         !               endif
+
+            tmp_output(xcol) = x; tmp_output(ycol) = y; tmp_output(zcol) = shiftedcord
+            if (.not. add1w) then
+			        write(30,format_string(maxcol, '(e15.7)')) tmp_output(1:maxcol)
+            else
+			        write(30,format_string(maxcol+1, '(e15.7)')) tmp_output(1:maxcol), 1.
+            endif
 
 		endif
 		if(shiftr) then
@@ -316,11 +338,17 @@ implicit none
 			endif
 			z = shiftedcord
                         
-                        if (.not. add1w) then
-			        write(40,'(3e15.7)') x, y, z
-                        else
-			        write(40,'(3e15.7," 1")') x, y, z
-                        endif
+            !            if (.not. add1w) then
+			!        write(40,'(3e15.7)') x, y, z
+            !            else
+			!        write(40,'(3e15.7," 1")') x, y, z
+            !            endif
+            tmp_output(xcol) = x; tmp_output(ycol) = y; tmp_output(zcol) = z
+            if (.not. add1w) then
+			        write(40,format_string(maxcol, '(e15.7)')) tmp_output(1:maxcol)
+            else
+			        write(40,format_string(maxcol+1, '(e15.7)')) tmp_output(1:maxcol), 1.
+            endif
 		endif
 		write(5,*) trim(adjustl(shiftstr2))
 		cycle
