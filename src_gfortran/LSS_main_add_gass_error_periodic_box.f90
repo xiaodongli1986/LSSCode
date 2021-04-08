@@ -4,10 +4,10 @@ use LSS_cosmo_funs
 
 implicit none
 
-	character(len=char_len) :: tmpstr1, tmpstr2, inputfile, outputfile, printstr
+	character(len=char_len) :: tmpstr1, tmpstr2, inputfile, outputfile, printstr, sigma, mu
 	integer :: i
 	
-	printstr = "Now it is empty!"
+	printstr = "Add "
 	if(iargc().le.1) then
 		print *, printstr
 		stop
