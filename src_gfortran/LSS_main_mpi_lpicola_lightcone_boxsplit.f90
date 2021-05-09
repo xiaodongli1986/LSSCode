@@ -213,9 +213,9 @@ implicit none
                 open(unit=10002,file=headfile,action='read')
                 read(10002,*) tmpstr1
                 read(10002,*) ntotal, boxsize, parmass, redshift, omegam, hubble, w;
-                !write(*, '(A,f12.3)')       '   read-in omegam = ', omegam
-                !write(*, '(A,f12.3)')       '   read-in hubble = ', hubble
-                !write(*, '(A,f12.3)')       '   read-in ntotal = ', ntotal
+                write(*, '(A,f12.3)')       '   read-in omegam = ', omegam
+                write(*, '(A,f12.3)')       '   read-in hubble = ', hubble
+                write(*, '(A,I12)')       '   read-in ntotal = ', ntotal
                 if(w.ge.-0.001) then
                         print *, '   set w as -1 (found w = ',w,')'
                         w = -1.
