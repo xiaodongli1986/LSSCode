@@ -64,6 +64,7 @@ EXE63 = ../bin/LSS_mpi_lpicola_lightcone_boxsplit
 EXE64 = ../bin/LSS_illustris_boxsplit
 EXE65 = ../bin/LSS_illustris_cic
 EXE66 = ../bin/LSS_add_gass_error_periodic_box
+EXE67 = ../bin/LSS_box_split_shift
 OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o
 #F90C = ifort -heap-arrays -diag-disable 6009 #gfortran #mpif90 -heap-arrays
 #OBJS = LSS_tools.o  LSS_mu_tools.o LSS_cosmo_funs.o LSS_settings_init.o LSS_cell.o LSS_smooth.o LSS_grad_fields.o LSS_chisq.o LSS_grid_tools.o LSS_BSK.o LSS_2pcf.o LSS_3pcf.o #LSS_kdtree3pcf.o kdtree2.o
@@ -82,8 +83,8 @@ F90C = mpif90
 F90FLAGS = 
 
 default: $(EXE2)
-nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41)          $(EXE43)                   $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56) $(EXE57) $(EXE58) $(EXE59) $(EXE60) $(EXE61) $(EXE61)                   $(EXE64) $(EXE65) $(EXE66)
-all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56) $(EXE57) $(EXE58) $(EXE59) $(EXE60) $(EXE61) $(EXE61) $(EXE62) $(EXE63) $(EXE64) $(EXE65) $(EXE66)
+nompi: $(EXE0)         $(EXE2)         $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11)          $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41)          $(EXE43)                   $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56) $(EXE57) $(EXE58) $(EXE59) $(EXE60) $(EXE61) $(EXE61)                   $(EXE64) $(EXE65) $(EXE66) $(EXE67)
+all:   $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32) $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47)  $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56) $(EXE57) $(EXE58) $(EXE59) $(EXE60) $(EXE61) $(EXE61) $(EXE62) $(EXE63) $(EXE64) $(EXE65) $(EXE66) $(EXE67)
 
 test: $(EXE0)
 bsk: $(EXE2)
@@ -149,6 +150,7 @@ mpi_lpicola_lightcone_boxsplit: $(EXE63)
 illustris_boxsplit: $(EXE64)
 illustris_cic: $(EXE65)
 add_gass_error_periodic_box: $(EXE66)
+box_split_shift: $(EXE67)
 AMTB: AMTB
 
 $(EXE0): $(OBJS) LSS_main_test.o
@@ -283,6 +285,8 @@ $(EXE65): LSS_cosmo_funs.o LSS_main_illustris_cic.o
 	$(F90C) -o $(EXE65) LSS_tools.o LSS_cosmo_funs.o  LSS_main_illustris_cic.o
 $(EXE66): LSS_cosmo_funs.o LSS_main_add_gass_error_periodic_box.o
 	$(F90C) -o $(EXE66) LSS_tools.o LSS_cosmo_funs.o  LSS_main_add_gass_error_periodic_box.o
+$(EXE67): LSS_cosmo_funs.o LSS_main_box_split_shift.o
+	$(F90C) -o $(EXE67) LSS_tools.o LSS_cosmo_funs.o  LSS_main_box_split_shift.o
 amtb: amtb
 
 
@@ -362,6 +366,7 @@ LSS_main_mpi_lpicola_lightcone_boxsplit: LSS_cosmo_funs.o
 LSS_main_illustris_boxsplit: LSS_cosmo_funs.o
 LSS_main_illustris_cic: LSS_cosmo_funs.o
 LSS_main_add_gass_error_periodic_box: LSS_cosmo_funs.o
+LSS_main_box_split_shift: LSS_cosmo_funs.o
 GYPS: GYPS
 #LSS_main.o: LSS_settings_init.o
 #LSS_main.o: LSS_tools.o
@@ -373,4 +378,4 @@ GYPS: GYPS
 	$(F90C) -c $< -o $@
 
 clean :
-	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47) $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56) $(EXE57) $(EXE58) $(EXE59) $(EXE60) $(EXE61) $(EXE61) $(EXE62) $(EXE63) $(EXE64) $(EXE65) $(EXE66)
+	rm -rf *.o *.mod $(EXE0) $(EXE1) $(EXE2) $(EXE3) $(EXE4) $(EXE5) $(EXE6) $(EXE7) $(EXE8) $(EXE9) $(EXE10) $(EXE11) $(EXE12) $(EXE13) $(EXE14) $(EXE15) $(EXE16) $(EXE17) $(EXE18) $(EXE19) $(OBJS) $(EXE20) $(EXE21) $(EXE22) $(EXE23) $(EXE24) $(EXE25) $(EXE26) $(EXE27) $(EXE28) $(EXE29) $(EXE30) $(EXE31) $(EXE32)  $(EXE33) $(EXE34) $(EXE35) $(EXE36) $(EXE37) $(EXE38) $(EXE39) $(EXE40) $(EXE41) $(EXE42) $(EXE43) $(EXE44) $(EXE45) $(EXE46) $(EXE47) $(EXE49) $(EXE50) $(EXE51) $(EXE52) $(EXE53) $(EXE54) $(EXE55) $(EXE56) $(EXE57) $(EXE58) $(EXE59) $(EXE60) $(EXE61) $(EXE61) $(EXE62) $(EXE63) $(EXE64) $(EXE65) $(EXE66) $(EXE67)
