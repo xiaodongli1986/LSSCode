@@ -4,7 +4,7 @@ A collection of Xiao-Dong's large scale structure codes
 
 # How to compile
 
-ifort is required.
+gfortran or ifort. ifort maybe more efficient for some high dimensional array staff
 
 	cd src
 	make nompi # compile those do not requiring mpi
